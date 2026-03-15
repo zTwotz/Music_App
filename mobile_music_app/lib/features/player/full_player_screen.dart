@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/widgets/song_options_bottom_sheet.dart';
 import 'lyrics_screen.dart';
 
 class FullPlayerScreen extends StatelessWidget {
@@ -65,7 +66,14 @@ class FullPlayerScreen extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
-                        const SizedBox(width: 48),
+                        IconButton(
+                          onPressed: () => showSongOptionsBottomSheet(
+                            context,
+                            song: song,
+                            controller: controller,
+                          ),
+                          icon: const Icon(Icons.more_vert),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 18),
@@ -118,8 +126,11 @@ class FullPlayerScreen extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.favorite_border),
+                          onPressed: controller.toggleFavorite,
+                          icon: Icon(
+                            controller.isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: controller.isFavorite ? Colors.red : Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -152,12 +163,16 @@ class FullPlayerScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.shuffle, size: 28),
+                          onPressed: controller.toggleShuffle,
+                          icon: Icon(
+                            Icons.shuffle,
+                            size: 28,
+                            color: controller.isShuffleActive ? Colors.green : Colors.white,
+                          ),
                         ),
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.skip_previous, size: 34),
+                          onPressed: controller.playPrevious,
+                          icon: const Icon(Icons.skip_previous, size: 34, color: Colors.white),
                         ),
                         Container(
                           decoration: const BoxDecoration(
@@ -176,12 +191,16 @@ class FullPlayerScreen extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.skip_next, size: 34),
+                          onPressed: controller.playNext,
+                          icon: const Icon(Icons.skip_next, size: 34, color: Colors.white),
                         ),
                         IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.timer_outlined, size: 28),
+                          onPressed: controller.toggleRepeat,
+                          icon: Icon(
+                            controller.isRepeatActive ? Icons.repeat_one : Icons.repeat,
+                            size: 28,
+                            color: controller.isRepeatActive ? Colors.green : Colors.white,
+                          ),
                         ),
                       ],
                     ),

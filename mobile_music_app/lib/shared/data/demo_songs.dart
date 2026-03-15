@@ -130,11 +130,11 @@ const List<Song> demoSongs = [
   ),
   Song(
     id: 'song_15',
-    title: 'Demo Song 15',
-    artist: 'Demo Artist 15',
-    audioAsset: 'assets/audio_demo/song_15.mp3',
-    coverAsset: 'assets/covers_demo/song_15.jpg',
-    lyricsAsset: 'assets/lyrics_demo/song_15.lrc',
+    title: '2GOILAYS',
+    artist: 'DMT ft Dangrangto ft TeuYungBoy',
+    audioAsset: 'assets/audio_demo/2GOILAYS.mp3',
+    coverAsset: 'assets/covers_demo/2GOILAYS.jpg',
+    lyricsAsset: 'assets/lyrics_demo/2GOILAYS.lrc',
     color: Colors.lightBlue,
   ),
   Song(
@@ -338,7 +338,7 @@ const List<Song> demoSongs = [
   Song(
     id: 'song_38',
     title: 'Em Của Ngày Hôm Qua',
-    artist: 'Sơn Tùng M-TP',
+    artist: 'Sơn Tùng MTP',
     audioAsset: 'assets/audio_demo/EmCuaNgayHomQua.mp3',
     coverAsset: 'assets/covers_demo/EmCuaNgayHomQua.jpg',
     lyricsAsset: 'assets/lyrics_demo/EmCuaNgayHomQua.lrc',

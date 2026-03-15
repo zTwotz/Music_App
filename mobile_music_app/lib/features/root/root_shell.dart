@@ -18,6 +18,7 @@ class RootShell extends StatefulWidget {
 class _RootShellState extends State<RootShell> {
   int _currentIndex = 0;
   late final AudioPlayerController _audioController;
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
 
   @override
   void initState() {
@@ -35,6 +36,10 @@ class _RootShellState extends State<RootShell> {
     if (index == 3) {
       _openCreateBottomSheet();
       return;
+    }
+
+    if (index == 0) {
+      _homeKey.currentState?.resetFilter();
     }
 
     setState(() {
@@ -64,98 +69,164 @@ class _RootShellState extends State<RootShell> {
     );
   }
 
-  void _playPreviousSong() {
-    if (!_audioController.hasSong || demoSongs.isEmpty) return;
-
-    final currentSong = _audioController.currentSong;
-    if (currentSong == null) return;
-
-    final currentIndex = demoSongs.indexWhere((song) => song.id == currentSong.id);
-    if (currentIndex == -1) return;
-
-    final previousIndex = currentIndex > 0 ? currentIndex - 1 : demoSongs.length - 1;
-    _audioController.selectSong(demoSongs[previousIndex]);
-  }
-
-  void _playNextSong() {
-    if (!_audioController.hasSong || demoSongs.isEmpty) return;
-
-    final currentSong = _audioController.currentSong;
-    if (currentSong == null) return;
-
-    final currentIndex = demoSongs.indexWhere((song) => song.id == currentSong.id);
-    if (currentIndex == -1) return;
-
-    final nextIndex = currentIndex < demoSongs.length - 1 ? currentIndex + 1 : 0;
-    _audioController.selectSong(demoSongs[nextIndex]);
-  }
-
-  List<Widget> _buildScreens() {
-    return [
-      HomeScreen(
-        songs: demoSongs,
-        currentSongId: _audioController.currentSong?.id,
-        onSelectSong: _audioController.selectSong,
-      ),
-      const SearchScreen(),
-      const LibraryScreen(),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screens = _buildScreens();
+    final screens = [
+      HomeScreen(
+        key: _homeKey,
+        songs: demoSongs,
+        controller: _audioController,
+      ),
+      SearchScreen(
+        controller: _audioController,
+        songs: demoSongs,
+      ),
+      LibraryScreen(controller: _audioController),
+    ];
 
-    return AnimatedBuilder(
-      animation: _audioController,
-      builder: (context, _) {
-        return Scaffold(
-          body: screens[_currentIndex],
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
+    return Scaffold(
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF121212),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_audioController.hasSong)
-                MiniPlayer(
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Color(0xFFF3759F),
+                      child: Text(
+                        'T',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Twot Nguyễn',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Xem hồ sơ',
+                          style: TextStyle(fontSize: 13, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white10),
+              ListTile(
+                leading: const Icon(Icons.add, color: Colors.white),
+                title: const Text('Thêm tài khoản', style: TextStyle(color: Colors.white)),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.flash_on, color: Colors.white),
+                title: const Text('Có gì mới', style: TextStyle(color: Colors.white)),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.show_chart, color: Colors.white),
+                title: Row(
+                  children: const [
+                    Text('Số liệu hoạt động nghe', style: TextStyle(color: Colors.white)),
+                    SizedBox(width: 8),
+                    Text('• Mới', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                  ],
+                ),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.history, color: Colors.white),
+                title: const Text('Gần đây', style: TextStyle(color: Colors.white)),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_none, color: Colors.white),
+                title: Row(
+                  children: const [
+                    Text('Tin cập nhật', style: TextStyle(color: Colors.white)),
+                    SizedBox(width: 8),
+                    Text('• Mới', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                  ],
+                ),
+                onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined, color: Colors.white),
+                title: const Text('Cài đặt và quyền riêng tư', style: TextStyle(color: Colors.white)),
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: screens[_currentIndex],
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _audioController,
+            builder: (context, _) {
+              if (_audioController.hasSong) {
+                return MiniPlayer(
                   song: _audioController.currentSong!,
                   isPlaying: _audioController.isPlaying,
                   progress: _audioController.progress,
                   onTap: _openFullPlayer,
-                  onPrevious: _playPreviousSong,
+                  onPrevious: _audioController.playPrevious,
                   onPlayPause: _audioController.togglePlayPause,
-                  onNext: _playNextSong,
-                ),
-              NavigationBar(
-                selectedIndex: _currentIndex,
-                backgroundColor: const Color(0xFF181818),
-                indicatorColor: Colors.white12,
-                onDestinationSelected: _onTapNav,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home),
-                    label: 'Trang chủ',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.search_outlined),
-                    selectedIcon: Icon(Icons.search),
-                    label: 'Tìm kiếm',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.library_music_outlined),
-                    selectedIcon: Icon(Icons.library_music),
-                    label: 'Thư viện',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.add_circle_outline),
-                    selectedIcon: Icon(Icons.add_circle),
-                    label: 'Tạo',
-                  ),
-                ],
+                  onNext: _audioController.playNext,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          NavigationBar(
+            selectedIndex: _currentIndex,
+            backgroundColor: const Color(0xFF181818),
+            indicatorColor: Colors.white12,
+            onDestinationSelected: _onTapNav,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: 'Trang chủ',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.search_outlined),
+                selectedIcon: Icon(Icons.search),
+                label: 'Tìm kiếm',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.library_music_outlined),
+                selectedIcon: Icon(Icons.library_music),
+                label: 'Thư viện',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.add_circle_outline),
+                selectedIcon: Icon(Icons.add_circle),
+                label: 'Tạo',
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
