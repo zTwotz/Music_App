@@ -1,14 +1,14 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart';
 
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/lyric_line.dart';
 import '../../shared/models/song.dart';
-
 
 class AudioPlayerController extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
@@ -128,39 +128,22 @@ class AudioPlayerController extends ChangeNotifier {
     }
   }
 
-Future<void> _loadLyricsFromUrl(String url) async {
-  try {
-    final response = await http.get(Uri.parse(url));
+  Future<void> _prepareLyrics(Song song) async {
+    final assetPath = song.lyricsAsset;
+    final lyricsUrl = song.lyricsUrl;
 
-    if (response.statusCode == 200) {
-      _lyrics = _parseLrc(response.body);
+    if (assetPath != null && assetPath.trim().isNotEmpty) {
+      await _loadLyrics(assetPath);
       return;
     }
 
-    debugPrint('Lyrics url load failed: ${response.statusCode}');
+    if (lyricsUrl != null && lyricsUrl.trim().isNotEmpty) {
+      await _loadLyricsFromUrl(lyricsUrl);
+      return;
+    }
+
     _lyrics = [];
-  } catch (e) {
-    debugPrint('Lyrics url error: $e');
-    _lyrics = [];
   }
-}
-
-Future<void> _prepareLyrics(Song song) async {
-  final assetPath = song.lyricsAsset;
-  final url = song.lyricsUrl;
-
-  if (assetPath != null && assetPath.trim().isNotEmpty) {
-    await _loadLyrics(assetPath);
-    return;
-  }
-
-  if (url != null && url.trim().isNotEmpty) {
-    await _loadLyricsFromUrl(url);
-    return;
-  }
-
-  _lyrics = [];
-}
 
   Future<void> _prepareAudioSource(Song song) async {
     final localFilePath = song.localFilePath;
@@ -193,7 +176,7 @@ Future<void> _prepareLyrics(Song song) async {
       }
 
       final raw = await rootBundle.loadString(cleanPath);
-      _lyrics = _parseLrc(raw);
+      _lyrics = _parseLrc(_normalizeRawLyrics(raw));
     } catch (e) {
       debugPrint('Lyrics load error: $e for path $assetPath');
 
@@ -201,13 +184,44 @@ Future<void> _prepareLyrics(Song song) async {
         try {
           final fallbackPath = assetPath.replaceFirst('assets/', '');
           final raw = await rootBundle.loadString(fallbackPath);
-          _lyrics = _parseLrc(raw);
+          _lyrics = _parseLrc(_normalizeRawLyrics(raw));
           return;
         } catch (_) {}
       }
 
       _lyrics = [];
     }
+  }
+
+  Future<void> _loadLyricsFromUrl(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode != 200) {
+        debugPrint('Lyrics url load failed: ${response.statusCode}');
+        _lyrics = [];
+        return;
+      }
+
+      String raw;
+      try {
+        raw = utf8.decode(response.bodyBytes);
+      } catch (_) {
+        raw = latin1.decode(response.bodyBytes);
+      }
+
+      _lyrics = _parseLrc(_normalizeRawLyrics(raw));
+    } catch (e) {
+      debugPrint('Lyrics url error: $e');
+      _lyrics = [];
+    }
+  }
+
+  String _normalizeRawLyrics(String raw) {
+    return raw
+        .replaceFirst('\uFEFF', '')
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
   }
 
   List<LyricLine> _parseLrc(String raw) {
