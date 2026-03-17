@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../features/root/root_shell.dart';
+import '../features/auth/auth_gate.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const RootShell(),
+      home: const AuthGate(),
     );
   }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/widgets/create_bottom_sheet.dart';
 import '../../shared/widgets/mini_player.dart';
+import '../auth/auth_provider.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
 import '../player/full_player_screen.dart';
@@ -71,6 +74,14 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
+    final displayName = auth.displayName;
+    final email = auth.email;
+    final avatarLetter = displayName.isNotEmpty
+        ? displayName.characters.first.toUpperCase()
+        : 'U';
+
     final screens = [
       HomeScreen(
         key: _homeKey,
@@ -95,12 +106,12 @@ class _RootShellState extends State<RootShell> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 24,
-                      backgroundColor: Color(0xFFF3759F),
+                      backgroundColor: const Color(0xFFF3759F),
                       child: Text(
-                        'T',
-                        style: TextStyle(
+                        avatarLetter,
+                        style: const TextStyle(
                           color: Colors.black,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -108,23 +119,32 @@ class _RootShellState extends State<RootShell> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Twot Nguyễn',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Xem hồ sơ',
-                          style: TextStyle(fontSize: 13, color: Colors.white70),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            email.isEmpty ? 'Chưa có email' : email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -132,46 +152,50 @@ class _RootShellState extends State<RootShell> {
               const Divider(color: Colors.white10),
               ListTile(
                 leading: const Icon(Icons.add, color: Colors.white),
-                title: const Text('Thêm tài khoản', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Thêm tài khoản',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () {},
               ),
               ListTile(
                 leading: const Icon(Icons.flash_on, color: Colors.white),
-                title: const Text('Có gì mới', style: TextStyle(color: Colors.white)),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.show_chart, color: Colors.white),
-                title: Row(
-                  children: const [
-                    Text('Số liệu hoạt động nghe', style: TextStyle(color: Colors.white)),
-                    SizedBox(width: 8),
-                    Text('• Mới', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
-                  ],
+                title: const Text(
+                  'Có gì mới',
+                  style: TextStyle(color: Colors.white),
                 ),
                 onTap: () {},
               ),
               ListTile(
                 leading: const Icon(Icons.history, color: Colors.white),
-                title: const Text('Gần đây', style: TextStyle(color: Colors.white)),
-                onTap: () {},
-              ),
-              ListTile(
-                leading: const Icon(Icons.notifications_none, color: Colors.white),
-                title: Row(
-                  children: const [
-                    Text('Tin cập nhật', style: TextStyle(color: Colors.white)),
-                    SizedBox(width: 8),
-                    Text('• Mới', style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
-                  ],
+                title: const Text(
+                  'Gần đây',
+                  style: TextStyle(color: Colors.white),
                 ),
                 onTap: () {},
               ),
               ListTile(
                 leading: const Icon(Icons.settings_outlined, color: Colors.white),
-                title: const Text('Cài đặt và quyền riêng tư', style: TextStyle(color: Colors.white)),
+                title: const Text(
+                  'Cài đặt và quyền riêng tư',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () {},
               ),
+              const Spacer(),
+              const Divider(color: Colors.white10),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text(
+                  'Đăng xuất',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await context.read<AuthProvider>().signOut();
+                },
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
