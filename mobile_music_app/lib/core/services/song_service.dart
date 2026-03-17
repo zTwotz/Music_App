@@ -13,16 +13,20 @@ class SongService {
         .eq('is_active', true)
         .order('created_at', ascending: false);
 
-    return (response as List).map((item) {
+    final rows = (response as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+
+    return rows.map((item) {
       return Song.cloud(
         id: item['id'].toString(),
-        title: item['title'] as String,
-        artist: item['artist'] as String,
-        audioUrl: item['audio_url'] as String,
+        title: (item['title'] ?? '') as String,
+        artist: (item['artist'] ?? '') as String,
+        audioUrl: (item['audio_url'] ?? '') as String,
         coverUrl: item['cover_url'] as String?,
         lyricsUrl: item['lyrics_url'] as String?,
         color: Colors.green,
       );
-    }).toList();
+    }).where((song) => (song.audioUrl ?? '').isNotEmpty).toList();
   }
 }

@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/song_service.dart';
 import 'core/services/supabase_config.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/catalog/song_catalog_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +24,11 @@ Future<void> main() async {
           create: (_) => AuthProvider(
             authService: AuthService(),
           )..bootstrap(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SongCatalogProvider(
+            songService: SongService(),
+          )..loadSongs(),
         ),
       ],
       child: const MyApp(),

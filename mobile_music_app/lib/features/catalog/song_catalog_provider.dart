@@ -31,9 +31,14 @@ class SongCatalogProvider extends ChangeNotifier {
       _cloudSongs = await songService.fetchCloudSongs();
     } catch (e) {
       _error = e.toString();
+      debugPrint('Load cloud songs error: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshSongs() async {
+    await loadSongs();
   }
 }

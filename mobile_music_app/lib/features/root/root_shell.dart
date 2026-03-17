@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
-import '../../shared/data/demo_songs.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/create_bottom_sheet.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../auth/auth_provider.dart';
+import '../catalog/song_catalog_provider.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
 import '../player/full_player_screen.dart';
@@ -61,7 +62,7 @@ class _RootShellState extends State<RootShell> {
     );
   }
 
-  void _openFullPlayer() {
+  void _openFullPlayer(List<Song> songs) {
     if (!_audioController.hasSong) return;
 
     Navigator.push(
@@ -69,7 +70,7 @@ class _RootShellState extends State<RootShell> {
       MaterialPageRoute(
         builder: (_) => FullPlayerScreen(
           controller: _audioController,
-          allSongs: demoSongs,
+          allSongs: songs,
         ),
       ),
     );
@@ -78,6 +79,9 @@ class _RootShellState extends State<RootShell> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final catalog = context.watch<SongCatalogProvider>();
+
+    final songs = catalog.allSongs;
 
     final displayName = auth.displayName;
     final email = auth.email;
@@ -87,16 +91,16 @@ class _RootShellState extends State<RootShell> {
     final screens = [
       HomeScreen(
         key: _homeKey,
-        songs: demoSongs,
+        songs: songs,
         controller: _audioController,
       ),
       SearchScreen(
         controller: _audioController,
-        songs: demoSongs,
+        songs: songs,
       ),
       LibraryScreen(
         controller: _audioController,
-        songs: demoSongs,
+        songs: songs,
       ),
     ];
 
@@ -187,6 +191,37 @@ class _RootShellState extends State<RootShell> {
                 ),
                 onTap: () {},
               ),
+              if (catalog.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Đang tải bài hát từ cloud...',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if ((catalog.error ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    'Cloud lỗi, app đang dùng nhạc local.',
+                    style: TextStyle(
+                      color: Colors.orange.shade300,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               const Spacer(),
               const Divider(color: Colors.white10),
               ListTile(
@@ -217,7 +252,7 @@ class _RootShellState extends State<RootShell> {
                   song: _audioController.currentSong!,
                   isPlaying: _audioController.isPlaying,
                   progress: _audioController.progress,
-                  onTap: _openFullPlayer,
+                  onTap: () => _openFullPlayer(songs),
                   onPrevious: _audioController.playPrevious,
                   onPlayPause: _audioController.togglePlayPause,
                   onNext: _audioController.playNext,

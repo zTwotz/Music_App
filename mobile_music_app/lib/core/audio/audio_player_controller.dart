@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:http/http.dart' as http;
 
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/lyric_line.dart';
 import '../../shared/models/song.dart';
+
 
 class AudioPlayerController extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
@@ -126,16 +128,39 @@ class AudioPlayerController extends ChangeNotifier {
     }
   }
 
-  Future<void> _prepareLyrics(Song song) async {
-    final assetPath = song.lyricsAsset;
+Future<void> _loadLyricsFromUrl(String url) async {
+  try {
+    final response = await http.get(Uri.parse(url));
 
-    if (assetPath != null && assetPath.trim().isNotEmpty) {
-      await _loadLyrics(assetPath);
+    if (response.statusCode == 200) {
+      _lyrics = _parseLrc(response.body);
       return;
     }
 
+    debugPrint('Lyrics url load failed: ${response.statusCode}');
+    _lyrics = [];
+  } catch (e) {
+    debugPrint('Lyrics url error: $e');
     _lyrics = [];
   }
+}
+
+Future<void> _prepareLyrics(Song song) async {
+  final assetPath = song.lyricsAsset;
+  final url = song.lyricsUrl;
+
+  if (assetPath != null && assetPath.trim().isNotEmpty) {
+    await _loadLyrics(assetPath);
+    return;
+  }
+
+  if (url != null && url.trim().isNotEmpty) {
+    await _loadLyricsFromUrl(url);
+    return;
+  }
+
+  _lyrics = [];
+}
 
   Future<void> _prepareAudioSource(Song song) async {
     final localFilePath = song.localFilePath;
