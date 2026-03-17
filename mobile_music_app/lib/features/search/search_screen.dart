@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
-import '../../shared/models/song.dart';
+import 'package:flutter/material.dart';
+
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../player/full_player_screen.dart';
-import '../../shared/data/demo_songs.dart';
-
 
 class SearchScreen extends StatefulWidget {
   final AudioPlayerController controller;
@@ -25,6 +24,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
   List<Song> _filteredSongs = [];
   bool _isSearching = false;
 
@@ -36,7 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
     '#r&b',
   ];
 
-  late final List<Map<String, dynamic>> browseItems;
+  late List<Map<String, dynamic>> browseItems;
 
   @override
   void initState() {
@@ -45,20 +45,31 @@ class _SearchScreenState extends State<SearchScreen> {
     _initializeBrowseItems();
   }
 
+  @override
+  void didUpdateWidget(covariant SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.songs != widget.songs) {
+      _initializeBrowseItems();
+      _onSearchChanged();
+    }
+  }
+
   void _initializeBrowseItems() {
     final random = Random();
     final songs = widget.songs;
+
     if (songs.isEmpty) {
       browseItems = [];
       return;
     }
+
     browseItems = [
-      {'title': 'Nhạc', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.red[700]},
-      {'title': 'Podcasts', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.pink[700]},
-      {'title': 'Sự kiện trực tiếp', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.purple[700]},
-      {'title': 'Dành cho bạn', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.deepPurple[700]},
-      {'title': 'Bản phát hành mới', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.indigo[700]},
-      {'title': 'Mới phát hành', 'image': songs[random.nextInt(songs.length)].coverAsset, 'color': Colors.blue[700]},
+      {'title': 'Nhạc', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Podcasts', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Sự kiện trực tiếp', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Dành cho bạn', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Bản phát hành mới', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Mới phát hành', 'song': songs[random.nextInt(songs.length)]},
     ];
   }
 
@@ -72,6 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
+
     if (query.isEmpty) {
       setState(() {
         _isSearching = false;
@@ -82,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _isSearching = true;
         _filteredSongs = widget.songs.where((song) {
           return song.title.toLowerCase().contains(query) ||
-                 song.artist.toLowerCase().contains(query);
+              song.artist.toLowerCase().contains(query);
         }).toList();
       });
     }
@@ -96,7 +108,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _showRandomSongs() {
     final random = Random();
-    final List<Song> randomSongs = List<Song>.from(widget.songs)..shuffle(random);
+    final randomSongs = List<Song>.from(widget.songs)..shuffle(random);
+
     setState(() {
       _isSearching = true;
       _filteredSongs = randomSongs.take(15).toList();
@@ -112,7 +125,6 @@ class _SearchScreenState extends State<SearchScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
             children: [
-              // Header with User Icon
               Row(
                 children: [
                   GestureDetector(
@@ -140,8 +152,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Search Bar
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -150,7 +160,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Bạn muốn nghe gì?',
                     hintStyle: const TextStyle(color: Colors.black54),
@@ -170,9 +183,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-
               if (!_isSearching) ...[
-                // Explore Tags
                 const Text(
                   'Khám phá nội dung mới mẻ',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -205,8 +216,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Browse All
                 const Text(
                   'Duyệt tìm tất cả',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -224,19 +233,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final item = browseItems[index];
+                    final song = item['song'] as Song;
+
                     return GestureDetector(
                       onTap: () {
-                        _searchController.text = item['title'];
+                        _searchController.text = item['title'] as String? ?? '';
                         _searchFocusNode.unfocus();
                         _showRandomSongs();
                       },
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          image: DecorationImage(
-                            image: AssetImage(item['image']),
-                            fit: BoxFit.cover,
-                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.3),
@@ -245,46 +252,54 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                           ],
                         ),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withOpacity(0.2),
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
-                              ],
-                              stops: const [0.0, 0.5, 1.0],
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: _buildSongCover(song),
                             ),
-                          ),
-                          child: Align(
-                            alignment: Alignment.bottomLeft,
-                            child: Text(
-                              item['title'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(0, 1),
-                                    blurRadius: 4,
-                                    color: Colors.black,
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.black.withOpacity(0.2),
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
+                                  ],
+                                  stops: const [0.0, 0.5, 1.0],
+                                ),
+                              ),
+                              child: Align(
+                                alignment: Alignment.bottomLeft,
+                                child: Text(
+                                  item['title'] as String? ?? '',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        offset: Offset(0, 1),
+                                        blurRadius: 4,
+                                        color: Colors.black,
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     );
                   },
                 ),
               ] else ...[
-                // Search Results
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -297,7 +312,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         _searchController.clear();
                         _searchFocusNode.unfocus();
                       },
-                      child: const Text('Hủy', style: TextStyle(color: Colors.white70)),
+                      child: const Text(
+                        'Hủy',
+                        style: TextStyle(color: Colors.white70),
+                      ),
                     ),
                   ],
                 ),
@@ -314,7 +332,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   )
                 else
                   ..._filteredSongs.map((song) {
-                    final isCurrentSong = widget.controller.currentSong?.id == song.id;
+                    final isCurrentSong =
+                        widget.controller.currentSong?.id == song.id;
+
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       onTap: () {
@@ -324,17 +344,17 @@ class _SearchScreenState extends State<SearchScreen> {
                           MaterialPageRoute(
                             builder: (_) => FullPlayerScreen(
                               controller: widget.controller,
+                              allSongs: widget.songs,
                             ),
                           ),
                         );
                       },
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          song.coverAsset,
+                        child: SizedBox(
                           width: 52,
                           height: 52,
-                          fit: BoxFit.cover,
+                          child: _buildSongCover(song),
                         ),
                       ),
                       title: Text(
@@ -344,14 +364,19 @@ class _SearchScreenState extends State<SearchScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      subtitle: Text(song.artist, style: const TextStyle(color: Colors.white70)),
+                      subtitle: Text(
+                        song.artist,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (isCurrentSong)
                             Padding(
                               padding: const EdgeInsets.only(right: 16),
-                              child: AnimatedEqualizer(isPlaying: widget.controller.isPlaying),
+                              child: AnimatedEqualizer(
+                                isPlaying: widget.controller.isPlaying,
+                              ),
                             ),
                           IconButton(
                             icon: const Icon(Icons.more_vert),
@@ -359,6 +384,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               context,
                               song: song,
                               controller: widget.controller,
+                              allSongs: widget.songs,
                             ),
                           ),
                         ],
@@ -370,6 +396,39 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return Container(
+            color: Colors.white10,
+            child: const Icon(Icons.music_note),
+          );
+        },
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return Container(
+            color: Colors.white10,
+            child: const Icon(Icons.music_note),
+          );
+        },
+      );
+    }
+
+    return Container(
+      color: Colors.white10,
+      child: const Icon(Icons.music_note),
     );
   }
 }

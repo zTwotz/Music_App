@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/song.dart';
 import '../../core/audio/audio_player_controller.dart';
 import '../../features/artist/artist_songs_screen.dart';
+import '../../shared/data/demo_songs.dart';
+import '../models/song.dart';
 
 void showSongOptionsBottomSheet(
   BuildContext context, {
   required Song song,
   required AudioPlayerController controller,
+  List<Song>? allSongs,
 }) {
+  final songsSource = allSongs ?? demoSongs;
+
   showModalBottomSheet(
     context: context,
     backgroundColor: const Color(0xFF1E1E1E),
@@ -20,6 +24,7 @@ void showSongOptionsBottomSheet(
         animation: controller,
         builder: (context, _) {
           final isFavorite = controller.favoriteSongIds.contains(song.id);
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Column(
@@ -29,17 +34,10 @@ void showSongOptionsBottomSheet(
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        song.coverAsset,
+                      child: _buildSongCover(
+                        song,
                         width: 64,
                         height: 64,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          width: 64,
-                          height: 64,
-                          color: Colors.white10,
-                          child: const Icon(Icons.music_note),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -75,14 +73,21 @@ void showSongOptionsBottomSheet(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.red : Colors.white70,
                   ),
-                  title: Text(isFavorite ? 'Đã thêm vào yêu thích' : 'Thêm vào yêu thích'),
+                  title: Text(
+                    isFavorite
+                        ? 'Đã thêm vào yêu thích'
+                        : 'Thêm vào yêu thích',
+                  ),
                   onTap: () {
                     controller.toggleFavoriteFor(song.id);
                     Navigator.pop(context);
                   },
                 ),
                 ListTile(
-                  leading: const Icon(Icons.playlist_add, color: Colors.white70),
+                  leading: const Icon(
+                    Icons.playlist_add,
+                    color: Colors.white70,
+                  ),
                   title: const Text('Thêm vào danh sách phát'),
                   onTap: () {
                     Navigator.pop(context);
@@ -94,7 +99,12 @@ void showSongOptionsBottomSheet(
                   title: const Text('Xem album'),
                   onTap: () {
                     Navigator.pop(context);
-                    _navigateToArtistScreen(context, song, controller);
+                    _navigateToArtistScreen(
+                      context,
+                      song,
+                      controller,
+                      songsSource,
+                    );
                   },
                 ),
                 ListTile(
@@ -102,7 +112,12 @@ void showSongOptionsBottomSheet(
                   title: const Text('Xem nghệ sĩ'),
                   onTap: () {
                     Navigator.pop(context);
-                    _navigateToAllArtistsScreen(context, song, controller);
+                    _navigateToAllArtistsScreen(
+                      context,
+                      song,
+                      controller,
+                      songsSource,
+                    );
                   },
                 ),
               ],
@@ -114,34 +129,67 @@ void showSongOptionsBottomSheet(
   );
 }
 
-void _navigateToArtistScreen(BuildContext context, Song song, AudioPlayerController controller) {
-  // Extract main artist
-  final mainArtist = song.artist.split(RegExp(r'\s+(ft|x|,|&|-)\s+|ft\.|feat\.', caseSensitive: false))[0].trim();
+void _navigateToArtistScreen(
+  BuildContext context,
+  Song song,
+  AudioPlayerController controller,
+  List<Song> songs,
+) {
+  final mainArtist = song.artist
+      .split(
+        RegExp(
+          r'\s+(ft|x|,|&|-)\s+|ft\.|feat\.',
+          caseSensitive: false,
+        ),
+      )
+      .first
+      .trim();
+
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => ArtistSongsScreen(
         artistName: mainArtist,
         controller: controller,
+        songs: songs,
       ),
     ),
   );
 }
 
-void _navigateToAllArtistsScreen(BuildContext context, Song song, AudioPlayerController controller) {
-  final mainArtist = song.artist.split(RegExp(r'\s+(ft|x|&|-)\s+|ft\.|feat\.|,\s*', caseSensitive: false))[0].trim();
+void _navigateToAllArtistsScreen(
+  BuildContext context,
+  Song song,
+  AudioPlayerController controller,
+  List<Song> songs,
+) {
+  final mainArtist = song.artist
+      .split(
+        RegExp(
+          r'\s+(ft|x|&|-)\s+|ft\.|feat\.|,\s*',
+          caseSensitive: false,
+        ),
+      )
+      .first
+      .trim();
+
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => ArtistSongsScreen(
         artistName: mainArtist,
         controller: controller,
+        songs: songs,
       ),
     ),
   );
 }
 
-void _showPlaylistsBottomSheet(BuildContext context, Song song, AudioPlayerController controller) {
+void _showPlaylistsBottomSheet(
+  BuildContext context,
+  Song song,
+  AudioPlayerController controller,
+) {
   showModalBottomSheet(
     context: context,
     backgroundColor: const Color(0xFF1E1E1E),
@@ -153,6 +201,7 @@ void _showPlaylistsBottomSheet(BuildContext context, Song song, AudioPlayerContr
         animation: controller,
         builder: (context, _) {
           final playlists = controller.playlists.keys.toList();
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Column(
@@ -187,6 +236,7 @@ void _showPlaylistsBottomSheet(BuildContext context, Song song, AudioPlayerContr
                   itemBuilder: (context, index) {
                     final playlistName = playlists[index];
                     final songCount = controller.playlists[playlistName]!.length;
+
                     return ListTile(
                       leading: Container(
                         width: 48,
@@ -195,7 +245,10 @@ void _showPlaylistsBottomSheet(BuildContext context, Song song, AudioPlayerContr
                           color: Colors.white10,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.queue_music, color: Colors.white70),
+                        child: const Icon(
+                          Icons.queue_music,
+                          color: Colors.white70,
+                        ),
                       ),
                       title: Text(playlistName),
                       subtitle: Text('$songCount bài hát'),
@@ -218,8 +271,13 @@ void _showPlaylistsBottomSheet(BuildContext context, Song song, AudioPlayerContr
   );
 }
 
-void _showCreatePlaylistDialog(BuildContext context, Song song, AudioPlayerController controller) {
+void _showCreatePlaylistDialog(
+  BuildContext context,
+  Song song,
+  AudioPlayerController controller,
+) {
   final textController = TextEditingController();
+
   showDialog(
     context: context,
     builder: (context) {
@@ -244,7 +302,10 @@ void _showCreatePlaylistDialog(BuildContext context, Song song, AudioPlayerContr
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy', style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -258,10 +319,56 @@ void _showCreatePlaylistDialog(BuildContext context, Song song, AudioPlayerContr
                 );
               }
             },
-            child: const Text('Tạo', style: TextStyle(color: Colors.green)),
+            child: const Text(
+              'Tạo',
+              style: TextStyle(color: Colors.green),
+            ),
           ),
         ],
       );
     },
+  );
+}
+
+Widget _buildSongCover(
+  Song song, {
+  double? width,
+  double? height,
+}) {
+  if ((song.coverAsset ?? '').isNotEmpty) {
+    return Image.asset(
+      song.coverAsset!,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        width: width,
+        height: height,
+        color: Colors.white10,
+        child: const Icon(Icons.music_note),
+      ),
+    );
+  }
+
+  if ((song.coverUrl ?? '').isNotEmpty) {
+    return Image.network(
+      song.coverUrl!,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        width: width,
+        height: height,
+        color: Colors.white10,
+        child: const Icon(Icons.music_note),
+      ),
+    );
+  }
+
+  return Container(
+    width: width,
+    height: height,
+    color: Colors.white10,
+    child: const Icon(Icons.music_note),
   );
 }

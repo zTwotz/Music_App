@@ -16,10 +16,14 @@ Future<void> main() async {
   );
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AuthProvider(
-        authService: AuthService(),
-      )..bootstrap(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(
+            authService: AuthService(),
+          )..bootstrap(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/data/demo_songs.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import 'lyrics_screen.dart';
 
 class FullPlayerScreen extends StatelessWidget {
   final AudioPlayerController controller;
+  final List<Song> allSongs;
 
   const FullPlayerScreen({
     super.key,
     required this.controller,
-  });
+    List<Song>? allSongs,
+  }) : allSongs = allSongs ?? demoSongs;
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +75,7 @@ class FullPlayerScreen extends StatelessWidget {
                             context,
                             song: song,
                             controller: controller,
+                            allSongs: allSongs,
                           ),
                           icon: const Icon(Icons.more_vert),
                         ),
@@ -85,19 +90,7 @@ class FullPlayerScreen extends StatelessWidget {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          song.coverAsset,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Center(
-                              child: Icon(
-                                Icons.album,
-                                size: 120,
-                                color: Colors.white70,
-                              ),
-                            );
-                          },
-                        ),
+                        child: _buildSongCover(song),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -128,8 +121,11 @@ class FullPlayerScreen extends StatelessWidget {
                         IconButton(
                           onPressed: controller.toggleFavorite,
                           icon: Icon(
-                            controller.isFavorite ? Icons.favorite : Icons.favorite_border,
-                            color: controller.isFavorite ? Colors.red : Colors.white,
+                            controller.isFavorite
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color:
+                                controller.isFavorite ? Colors.red : Colors.white,
                           ),
                         ),
                       ],
@@ -167,12 +163,18 @@ class FullPlayerScreen extends StatelessWidget {
                           icon: Icon(
                             Icons.shuffle,
                             size: 28,
-                            color: controller.isShuffleActive ? Colors.green : Colors.white,
+                            color: controller.isShuffleActive
+                                ? Colors.green
+                                : Colors.white,
                           ),
                         ),
                         IconButton(
                           onPressed: controller.playPrevious,
-                          icon: const Icon(Icons.skip_previous, size: 34, color: Colors.white),
+                          icon: const Icon(
+                            Icons.skip_previous,
+                            size: 34,
+                            color: Colors.white,
+                          ),
                         ),
                         Container(
                           decoration: const BoxDecoration(
@@ -192,14 +194,22 @@ class FullPlayerScreen extends StatelessWidget {
                         ),
                         IconButton(
                           onPressed: controller.playNext,
-                          icon: const Icon(Icons.skip_next, size: 34, color: Colors.white),
+                          icon: const Icon(
+                            Icons.skip_next,
+                            size: 34,
+                            color: Colors.white,
+                          ),
                         ),
                         IconButton(
                           onPressed: controller.toggleRepeat,
                           icon: Icon(
-                            controller.isRepeatActive ? Icons.repeat_one : Icons.repeat,
+                            controller.isRepeatActive
+                                ? Icons.repeat_one
+                                : Icons.repeat,
                             size: 28,
-                            color: controller.isRepeatActive ? Colors.green : Colors.white,
+                            color: controller.isRepeatActive
+                                ? Colors.green
+                                : Colors.white,
                           ),
                         ),
                       ],
@@ -213,6 +223,48 @@ class FullPlayerScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Center(
+            child: Icon(
+              Icons.album,
+              size: 120,
+              color: Colors.white70,
+            ),
+          );
+        },
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Center(
+            child: Icon(
+              Icons.album,
+              size: 120,
+              color: Colors.white70,
+            ),
+          );
+        },
+      );
+    }
+
+    return const Center(
+      child: Icon(
+        Icons.album,
+        size: 120,
+        color: Colors.white70,
+      ),
     );
   }
 }
@@ -236,10 +288,7 @@ class _LyricsPreviewCard extends StatelessWidget {
     } else {
       final start = currentIndex >= 0 ? currentIndex : 0;
       final end = (start + 4).clamp(0, lyrics.length);
-      previewLines = lyrics
-          .sublist(start, end)
-          .map((e) => e.text)
-          .toList();
+      previewLines = lyrics.sublist(start, end).map((e) => e.text).toList();
     }
 
     return Container(

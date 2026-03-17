@@ -1,10 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
+
+import '../../shared/data/demo_songs.dart';
 import '../../shared/models/lyric_line.dart';
 import '../../shared/models/song.dart';
-import '../../shared/data/demo_songs.dart';
-import 'dart:math';
 
 class AudioPlayerController extends ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
@@ -22,7 +24,6 @@ class AudioPlayerController extends ChangeNotifier {
   bool _isRepeatActive = false;
   final Set<String> _favoriteSongIds = {};
 
-
   final Map<String, List<String>> _playlists = {
     'Nhạc chill đêm': ['song_19', 'song_18', 'song_23'],
     'Top bài hát năm 2025': ['song_26', 'song_11', 'song_15'],
@@ -39,8 +40,6 @@ class AudioPlayerController extends ChangeNotifier {
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         debugPrint('--- Bài hát kết thúc ---');
-        // Đối với LoopMode.one, just_audio sẽ tự lặp lại.
-        // Chỉ xử lý chuyển bài nếu KHÔNG ở chế độ lặp lại 1 bài.
         if (!_isRepeatActive) {
           debugPrint('Chế độ: Chuyển tiếp bài hát mới...');
           playNext();
@@ -48,7 +47,6 @@ class AudioPlayerController extends ChangeNotifier {
       }
       notifyListeners();
     });
-
 
     _player.positionStream.listen((position) {
       _position = position;
@@ -61,7 +59,6 @@ class AudioPlayerController extends ChangeNotifier {
     });
   }
 
-
   Song? get currentSong => _currentSong;
   Duration get position => _position;
   Duration get duration => _duration;
@@ -72,13 +69,15 @@ class AudioPlayerController extends ChangeNotifier {
 
   bool get isShuffleActive => _isShuffleActive;
   bool get isRepeatActive => _isRepeatActive;
-  bool get isFavorite => _currentSong != null && _favoriteSongIds.contains(_currentSong!.id);
+  bool get isFavorite =>
+      _currentSong != null && _favoriteSongIds.contains(_currentSong!.id);
   Set<String> get favoriteSongIds => _favoriteSongIds;
   Map<String, List<String>> get playlists => _playlists;
 
   double get progress {
     if (_duration.inMilliseconds <= 0) return 0;
-    return (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
+    return (_position.inMilliseconds / _duration.inMilliseconds)
+        .clamp(0.0, 1.0);
   }
 
   int get currentLyricIndex {
@@ -108,17 +107,17 @@ class AudioPlayerController extends ChangeNotifier {
         _position = Duration.zero;
         _duration = Duration.zero;
         _lyrics = [];
-        await _loadLyrics(song.lyricsAsset);
-        await _player.setAsset(song.audioAsset);
-        
-        // Luôn đảm bảo LoopMode chính xác khi đổi bài
-        await _player.setLoopMode(_isRepeatActive ? LoopMode.one : LoopMode.off);
+
+        await _prepareLyrics(song);
+        await _prepareAudioSource(song);
+
+        await _player.setLoopMode(
+          _isRepeatActive ? LoopMode.one : LoopMode.off,
+        );
       }
 
-      // Xóa điểm seek cũ và phát ngay để tránh mất tiếng trên Web
       await _player.seek(Duration.zero);
       await _player.play();
-
     } catch (e) {
       debugPrint('Audio error: $e');
     } finally {
@@ -127,19 +126,52 @@ class AudioPlayerController extends ChangeNotifier {
     }
   }
 
+  Future<void> _prepareLyrics(Song song) async {
+    final assetPath = song.lyricsAsset;
+
+    if (assetPath != null && assetPath.trim().isNotEmpty) {
+      await _loadLyrics(assetPath);
+      return;
+    }
+
+    _lyrics = [];
+  }
+
+  Future<void> _prepareAudioSource(Song song) async {
+    final localFilePath = song.localFilePath;
+    final audioAsset = song.audioAsset;
+    final audioUrl = song.audioUrl;
+
+    if (localFilePath != null && localFilePath.trim().isNotEmpty) {
+      await _player.setFilePath(localFilePath);
+      return;
+    }
+
+    if (audioAsset != null && audioAsset.trim().isNotEmpty) {
+      await _player.setAsset(audioAsset);
+      return;
+    }
+
+    if (audioUrl != null && audioUrl.trim().isNotEmpty) {
+      await _player.setUrl(audioUrl);
+      return;
+    }
+
+    throw Exception('Song has no playable source: ${song.id}');
+  }
+
   Future<void> _loadLyrics(String assetPath) async {
     try {
-      // Fix potential web asset path issues (double "assets/" prefix)
       String cleanPath = assetPath;
       if (cleanPath.startsWith('assets/assets/')) {
         cleanPath = cleanPath.replaceFirst('assets/', '');
       }
-      
+
       final raw = await rootBundle.loadString(cleanPath);
       _lyrics = _parseLrc(raw);
     } catch (e) {
       debugPrint('Lyrics load error: $e for path $assetPath');
-      // If primary path fails, try without leading "assets/" as fallback
+
       if (assetPath.startsWith('assets/')) {
         try {
           final fallbackPath = assetPath.replaceFirst('assets/', '');
@@ -148,10 +180,10 @@ class AudioPlayerController extends ChangeNotifier {
           return;
         } catch (_) {}
       }
+
       _lyrics = [];
     }
   }
-
 
   List<LyricLine> _parseLrc(String raw) {
     final lines = raw.split('\n');
@@ -221,7 +253,6 @@ class AudioPlayerController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void toggleFavorite() {
     if (_currentSong == null) return;
     toggleFavoriteFor(_currentSong!.id);
@@ -252,39 +283,60 @@ class AudioPlayerController extends ChangeNotifier {
     }
   }
 
+  Song? _findSongById(String id) {
+    for (final song in _currentQueue) {
+      if (song.id == id) return song;
+    }
+
+    for (final song in demoSongs) {
+      if (song.id == id) return song;
+    }
+
+    if (_currentSong?.id == id) {
+      return _currentSong;
+    }
+
+    return null;
+  }
+
   Future<void> playPrevious() async {
-    // 1. Nếu có lịch sử, quay lại bài hát thực tế đã phát trước đó (đã lưu trong _history)
     if (_history.isNotEmpty) {
       final prevSongId = _history.removeLast();
       debugPrint('Lùi bài: Quay lại bài từ Lịch sử (ID: $prevSongId)');
-      try {
-        final song = demoSongs.firstWhere((s) => s.id == prevSongId);
+
+      final song = _findSongById(prevSongId);
+      if (song != null) {
         await selectSong(song);
         return;
-      } catch (e) {
-        debugPrint('Không tìm thấy bài trong lịch sử: $e');
       }
+
+      debugPrint('Không tìm thấy bài trong lịch sử');
     }
 
-    // 2. Nếu lịch sử trống (hoặc lỗi), quay lại bài trước đó theo thứ tự danh sách (Sequential fallback)
     if (_currentSong == null || _currentQueue.isEmpty) return;
-    int currentIndex = _currentQueue.indexWhere((s) => s.id == _currentSong!.id);
+
+    final currentIndex =
+        _currentQueue.indexWhere((s) => s.id == _currentSong!.id);
     if (currentIndex == -1) return;
 
-    int prevIndex = currentIndex > 0 ? currentIndex - 1 : _currentQueue.length - 1;
-    debugPrint('Lùi bài: Không có lịch sử, lùi tuần tự danh sách (Index $prevIndex)');
+    final prevIndex =
+        currentIndex > 0 ? currentIndex - 1 : _currentQueue.length - 1;
+
+    debugPrint(
+      'Lùi bài: Không có lịch sử, lùi tuần tự danh sách (Index $prevIndex)',
+    );
+
     await selectSong(_currentQueue[prevIndex]);
   }
 
   Future<void> playNext() async {
     if (_currentSong == null || _currentQueue.isEmpty) return;
 
-    // Lưu bài hiện tại vào lịch sử trước khi chuyển sang bài mới
     _history.add(_currentSong!.id);
-    // Giảm kích thước lịch sử nếu quá dài (ví dụ tối đa 50 bài)
     if (_history.length > 50) _history.removeAt(0);
 
-    int currentIndex = _currentQueue.indexWhere((s) => s.id == _currentSong!.id);
+    final currentIndex =
+        _currentQueue.indexWhere((s) => s.id == _currentSong!.id);
     if (currentIndex == -1) return;
 
     int nextIndex;
@@ -300,14 +352,13 @@ class AudioPlayerController extends ChangeNotifier {
       }
       debugPrint('Chuyển tiếp: Chế độ Ngẫu nhiên -> Index $nextIndex');
     } else {
-      nextIndex = currentIndex < _currentQueue.length - 1 ? currentIndex + 1 : 0;
+      nextIndex =
+          currentIndex < _currentQueue.length - 1 ? currentIndex + 1 : 0;
       debugPrint('Chuyển tiếp: Chế độ Tuần tự -> Index $nextIndex');
     }
-    
+
     await selectSong(_currentQueue[nextIndex]);
   }
-
-
 
   Future<void> seek(Duration value) async {
     try {
@@ -318,8 +369,10 @@ class AudioPlayerController extends ChangeNotifier {
   }
 
   String formatTime(Duration value) {
-    final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final minutes =
+        value.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds =
+        value.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../shared/models/song.dart';
+
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/data/demo_songs.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../player/full_player_screen.dart';
@@ -9,13 +11,15 @@ class PlaylistDetailScreen extends StatelessWidget {
   final String title;
   final List<Song> songs;
   final AudioPlayerController controller;
+  final List<Song> allSongs;
 
   const PlaylistDetailScreen({
     super.key,
     required this.title,
     required this.songs,
     required this.controller,
-  });
+    List<Song>? allSongs,
+  }) : allSongs = allSongs ?? demoSongs;
 
   @override
   Widget build(BuildContext context) {
@@ -49,17 +53,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                       ),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          song.coverAsset,
+                        child: SizedBox(
                           width: 50,
                           height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.white10,
-                            child: const Icon(Icons.music_note),
-                          ),
+                          child: _buildSongCover(song),
                         ),
                       ),
                       title: Text(
@@ -79,7 +76,9 @@ class PlaylistDetailScreen extends StatelessWidget {
                           if (isCurrentSong)
                             Padding(
                               padding: const EdgeInsets.only(right: 16),
-                              child: AnimatedEqualizer(isPlaying: controller.isPlaying),
+                              child: AnimatedEqualizer(
+                                isPlaying: controller.isPlaying,
+                              ),
                             ),
                           IconButton(
                             icon: const Icon(Icons.more_vert),
@@ -87,6 +86,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                               context,
                               song: song,
                               controller: controller,
+                              allSongs: allSongs,
                             ),
                           ),
                         ],
@@ -98,6 +98,7 @@ class PlaylistDetailScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => FullPlayerScreen(
                               controller: controller,
+                              allSongs: allSongs,
                             ),
                           ),
                         );
@@ -107,6 +108,35 @@ class PlaylistDetailScreen extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.white10,
+      child: const Icon(Icons.music_note),
     );
   }
 }

@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
-import '../../shared/models/song.dart';
+import 'package:flutter/material.dart';
+
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
 import '../library/favorite_songs_screen.dart';
-import '../playlist/playlist_detail_screen.dart';
 import '../player/full_player_screen.dart';
+import '../playlist/playlist_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
@@ -26,6 +27,9 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   String _selectedFilter = 'Tất cả';
 
+  late List<Map<String, dynamic>> recentItems;
+  late List<Map<String, dynamic>> dailyMixes;
+
   void resetFilter() {
     if (!mounted) return;
     if (_selectedFilter != 'Tất cả') {
@@ -35,13 +39,18 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  late List<Map<String, dynamic>> recentItems;
-  late List<Map<String, dynamic>> dailyMixes;
-
   @override
   void initState() {
     super.initState();
     _initializeData();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.songs != widget.songs) {
+      _initializeData();
+    }
   }
 
   void _initializeData() {
@@ -53,9 +62,36 @@ class HomeScreenState extends State<HomeScreen> {
       return list.take(count).toList();
     }
 
-    String getRandomCover() {
-      if (widget.songs.isEmpty) return '';
-      return widget.songs[random.nextInt(widget.songs.length)].coverAsset;
+    Map<String, dynamic> getRandomCoverInfo() {
+      if (widget.songs.isEmpty) {
+        return {
+          'image': '',
+          'isNetwork': false,
+        };
+      }
+
+      final song = widget.songs[random.nextInt(widget.songs.length)];
+      final asset = song.coverAsset ?? '';
+      final url = song.coverUrl ?? '';
+
+      if (asset.isNotEmpty) {
+        return {
+          'image': asset,
+          'isNetwork': false,
+        };
+      }
+
+      if (url.isNotEmpty) {
+        return {
+          'image': url,
+          'isNetwork': true,
+        };
+      }
+
+      return {
+        'image': '',
+        'isNetwork': false,
+      };
     }
 
     recentItems = [
@@ -70,15 +106,15 @@ class HomeScreenState extends State<HomeScreen> {
               builder: (_) => ArtistSongsScreen(
                 artistName: 'Sơn Tùng MTP',
                 controller: widget.controller,
+                songs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
       {
         'title': 'Top Hits',
-        'isNetwork': false,
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'onTap': () {
           Navigator.push(
             context,
@@ -87,15 +123,15 @@ class HomeScreenState extends State<HomeScreen> {
                 title: 'Top Hits Vietnam',
                 songs: getRandomSongs(7),
                 controller: widget.controller,
+                allSongs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
       {
         'title': 'Chill Cuối Tuần',
-        'isNetwork': false,
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'onTap': () {
           Navigator.push(
             context,
@@ -104,15 +140,15 @@ class HomeScreenState extends State<HomeScreen> {
                 title: 'Chill Cuối Tuần',
                 songs: getRandomSongs(8),
                 controller: widget.controller,
+                allSongs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
       {
         'title': 'Nhạc Code Đêm',
-        'isNetwork': false,
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'onTap': () {
           Navigator.push(
             context,
@@ -121,10 +157,11 @@ class HomeScreenState extends State<HomeScreen> {
                 title: 'Nhạc Code Đêm',
                 songs: getRandomSongs(10),
                 controller: widget.controller,
+                allSongs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
       {
         'title': 'The Weeknd',
@@ -137,10 +174,11 @@ class HomeScreenState extends State<HomeScreen> {
               builder: (_) => ArtistSongsScreen(
                 artistName: 'The Weeknd',
                 controller: widget.controller,
+                songs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
       {
         'title': 'Bài hát đã thích',
@@ -153,32 +191,33 @@ class HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(
               builder: (_) => FavoriteSongsScreen(
                 controller: widget.controller,
+                songs: widget.songs,
               ),
             ),
           );
-        }
+        },
       },
     ];
 
     dailyMixes = [
       {
         'title': 'Giai Điệu Thư Giãn',
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'songs': getRandomSongs(12),
       },
       {
         'title': 'Năng Lượng Tích Cực',
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'songs': getRandomSongs(15),
       },
       {
         'title': 'Chìm Đắm Suy Tư',
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'songs': getRandomSongs(9),
       },
       {
         'title': 'Trạm Sạc Cảm Xúc',
-        'image': getRandomCover(),
+        ...getRandomCoverInfo(),
         'songs': getRandomSongs(11),
       },
     ];
@@ -227,7 +266,8 @@ class HomeScreenState extends State<HomeScreen> {
                     rightActiveColor: const Color(0xFF90CEFA),
                     isLeftActive: _selectedFilter == 'Âm nhạc',
                     onLeftTap: () => setState(() => _selectedFilter = 'Âm nhạc'),
-                    onRightTap: () => setState(() => _selectedFilter = 'Âm nhạc - Đang theo dõi'),
+                    onRightTap: () =>
+                        setState(() => _selectedFilter = 'Âm nhạc - Đang theo dõi'),
                   ),
                 ] else ...[
                   _buildTopChip(
@@ -246,7 +286,9 @@ class HomeScreenState extends State<HomeScreen> {
                     rightActiveColor: const Color(0xFF1ED760),
                     isLeftActive: _selectedFilter == 'Podcasts',
                     onLeftTap: () => setState(() => _selectedFilter = 'Podcasts'),
-                    onRightTap: () => setState(() => _selectedFilter = 'Podcasts - Đang theo dõi'),
+                    onRightTap: () => setState(
+                      () => _selectedFilter = 'Podcasts - Đang theo dõi',
+                    ),
                   ),
                 ] else ...[
                   _buildTopChip(
@@ -277,27 +319,36 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             itemBuilder: (context, index) {
               final item = recentItems[index];
+
               return AnimatedBuilder(
                 animation: widget.controller,
                 builder: (context, _) {
-                  String displayImage = item['image'] ?? '';
+                  String displayImage = item['image'] as String? ?? '';
+                  bool isNetwork = item['isNetwork'] as bool? ?? false;
+
                   if (item['isFavoriteList'] == true) {
-                    if (widget.controller.favoriteSongIds.isNotEmpty) {
+                    if (widget.controller.favoriteSongIds.isNotEmpty &&
+                        widget.songs.isNotEmpty) {
                       final firstId = widget.controller.favoriteSongIds.first;
                       final song = widget.songs.firstWhere(
                         (s) => s.id == firstId,
                         orElse: () => widget.songs.first,
                       );
-                      displayImage = song.coverAsset;
+
+                      displayImage = song.coverAsset ?? song.coverUrl ?? '';
+                      isNetwork =
+                          (song.coverAsset ?? '').isEmpty &&
+                          (song.coverUrl ?? '').isNotEmpty;
                     } else {
                       displayImage = '';
+                      isNetwork = false;
                     }
                   }
 
                   return Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: item['onTap'],
+                      onTap: item['onTap'] as VoidCallback?,
                       borderRadius: BorderRadius.circular(6),
                       child: Container(
                         decoration: BoxDecoration(
@@ -313,27 +364,26 @@ class HomeScreenState extends State<HomeScreen> {
                               child: displayImage.isEmpty
                                   ? Container(
                                       color: Colors.white10,
-                                      child: const Icon(Icons.favorite, color: Colors.white70),
+                                      child: const Icon(
+                                        Icons.favorite,
+                                        color: Colors.white70,
+                                      ),
                                     )
-                                  : (item['isNetwork'] == true
-                                      ? Image.network(
-                                          displayImage,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(color: Colors.white10, child: const Icon(Icons.music_note)),
-                                        )
-                                      : Image.asset(
-                                          displayImage,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) => Container(color: Colors.white10, child: const Icon(Icons.music_note)),
-                                        )),
+                                  : _buildImageByPath(
+                                      displayImage,
+                                      isNetwork: isNetwork,
+                                    ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                item['title'],
+                                item['title'] as String? ?? '',
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -360,15 +410,20 @@ class HomeScreenState extends State<HomeScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 16),
               itemBuilder: (context, index) {
                 final mix = dailyMixes[index];
+                final image = mix['image'] as String? ?? '';
+                final isNetwork = mix['isNetwork'] as bool? ?? false;
+                final songs = mix['songs'] as List<Song>? ?? [];
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => PlaylistDetailScreen(
-                          title: mix['title'],
-                          songs: mix['songs'],
+                          title: mix['title'] as String? ?? '',
+                          songs: songs,
                           controller: widget.controller,
+                          allSongs: widget.songs,
                         ),
                       ),
                     );
@@ -385,26 +440,30 @@ class HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: mix['image'].isEmpty
+                          child: image.isEmpty
                               ? const Center(
-                                  child: Icon(Icons.album, size: 48, color: Colors.white70),
+                                  child: Icon(
+                                    Icons.album,
+                                    size: 48,
+                                    color: Colors.white70,
+                                  ),
                                 )
-                              : Image.asset(
-                                  mix['image'],
-                                  fit: BoxFit.cover,
+                              : _buildImageByPath(
+                                  image,
+                                  isNetwork: isNetwork,
                                   width: double.infinity,
                                   height: double.infinity,
-                                  errorBuilder: (_, __, ___) => const Center(
-                                    child: Icon(Icons.album, size: 48, color: Colors.white70),
-                                  ),
                                 ),
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          mix['title'],
+                          mix['title'] as String? ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -425,6 +484,7 @@ class HomeScreenState extends State<HomeScreen> {
                 animation: widget.controller,
                 builder: (context, _) {
                   final isCurrentSong = widget.controller.currentSong?.id == song.id;
+
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
                     onTap: () {
@@ -434,6 +494,7 @@ class HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                           builder: (_) => FullPlayerScreen(
                             controller: widget.controller,
+                            allSongs: widget.songs,
                           ),
                         ),
                       );
@@ -442,18 +503,14 @@ class HomeScreenState extends State<HomeScreen> {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: isCurrentSong ? Colors.green.withOpacity(0.3) : Colors.white10,
+                        color: isCurrentSong
+                            ? Colors.green.withOpacity(0.3)
+                            : Colors.white10,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          song.coverAsset,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(Icons.music_note, color: Colors.white70);
-                          },
-                        ),
+                        child: _buildSongCover(song),
                       ),
                     ),
                     title: Text(
@@ -470,7 +527,9 @@ class HomeScreenState extends State<HomeScreen> {
                         if (isCurrentSong)
                           Padding(
                             padding: const EdgeInsets.only(right: 16),
-                            child: AnimatedEqualizer(isPlaying: widget.controller.isPlaying),
+                            child: AnimatedEqualizer(
+                              isPlaying: widget.controller.isPlaying,
+                            ),
                           ),
                         IconButton(
                           icon: const Icon(Icons.more_vert),
@@ -478,6 +537,7 @@ class HomeScreenState extends State<HomeScreen> {
                             context,
                             song: song,
                             controller: widget.controller,
+                            allSongs: widget.songs,
                           ),
                         ),
                       ],
@@ -492,7 +552,75 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTopChip(String label, {bool isSelected = false, bool isOutlined = false, VoidCallback? onTap}) {
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Icon(Icons.music_note, color: Colors.white70);
+        },
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Icon(Icons.music_note, color: Colors.white70);
+        },
+      );
+    }
+
+    return const Icon(Icons.music_note, color: Colors.white70);
+  }
+
+  Widget _buildImageByPath(
+    String path, {
+    required bool isNetwork,
+    double? width,
+    double? height,
+  }) {
+    if (isNetwork) {
+      return Image.network(
+        path,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.white10,
+            child: const Icon(Icons.music_note),
+          );
+        },
+      );
+    }
+
+    return Image.asset(
+      path,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) {
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        );
+      },
+    );
+  }
+
+  Widget _buildTopChip(
+    String label, {
+    bool isSelected = false,
+    bool isOutlined = false,
+    VoidCallback? onTap,
+  }) {
     Color bgColor = const Color(0xFF2A2A2A);
     Color textColor = Colors.white;
     Border? border;

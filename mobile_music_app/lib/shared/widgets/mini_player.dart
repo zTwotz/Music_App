@@ -50,16 +50,7 @@ class MiniPlayer extends StatelessWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: Image.asset(
-                            song.coverAsset,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.music_note,
-                                color: Colors.white,
-                              );
-                            },
-                          ),
+                          child: _buildSongCover(song),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -91,8 +82,6 @@ class MiniPlayer extends StatelessWidget {
                           ],
                         ),
                       ),
-
-                      // Nút bài trước
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         onPressed: onPrevious,
@@ -102,8 +91,6 @@ class MiniPlayer extends StatelessWidget {
                           size: 22,
                         ),
                       ),
-
-                      // Nút phát / dừng
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         onPressed: onPlayPause,
@@ -113,8 +100,6 @@ class MiniPlayer extends StatelessWidget {
                           size: 24,
                         ),
                       ),
-
-                      // Nút bài tiếp theo
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         onPressed: onNext,
@@ -144,5 +129,29 @@ class MiniPlayer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Icon(Icons.music_note, color: Colors.white);
+        },
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Icon(Icons.music_note, color: Colors.white);
+        },
+      );
+    }
+
+    return const Icon(Icons.music_note, color: Colors.white);
   }
 }

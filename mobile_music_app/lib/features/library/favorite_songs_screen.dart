@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
+
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/data/demo_songs.dart';
-import '../../shared/widgets/mini_player.dart';
+import '../../shared/models/song.dart';
 import '../player/full_player_screen.dart';
 
 class FavoriteSongsScreen extends StatelessWidget {
   final AudioPlayerController controller;
+  final List<Song> songs;
 
   const FavoriteSongsScreen({
     super.key,
     required this.controller,
-  });
+    List<Song>? songs,
+  }) : songs = songs ?? demoSongs;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final favoriteSongs = demoSongs
+        final favoriteSongs = songs
             .where((song) => controller.favoriteSongIds.contains(song.id))
             .toList();
 
@@ -48,17 +51,10 @@ class FavoriteSongsScreen extends StatelessWidget {
                       ),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          song.coverAsset,
+                        child: SizedBox(
                           width: 50,
                           height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.white10,
-                            child: const Icon(Icons.music_note),
-                          ),
+                          child: _buildSongCover(song),
                         ),
                       ),
                       title: Text(
@@ -75,7 +71,6 @@ class FavoriteSongsScreen extends StatelessWidget {
                       trailing: IconButton(
                         icon: const Icon(Icons.favorite, color: Colors.red),
                         onPressed: () {
-                          // Allow removing from favorites directly
                           controller.toggleFavoriteFor(song.id);
                         },
                       ),
@@ -86,6 +81,7 @@ class FavoriteSongsScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => FullPlayerScreen(
                               controller: controller,
+                              allSongs: songs,
                             ),
                           ),
                         );
@@ -95,6 +91,35 @@ class FavoriteSongsScreen extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.white10,
+      child: const Icon(Icons.music_note),
     );
   }
 }

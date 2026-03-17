@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../shared/data/demo_songs.dart';
+
 import '../../core/audio/audio_player_controller.dart';
+import '../../shared/data/demo_songs.dart';
+import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../player/full_player_screen.dart';
@@ -8,23 +10,36 @@ import '../player/full_player_screen.dart';
 class ArtistSongsScreen extends StatelessWidget {
   final String artistName;
   final AudioPlayerController controller;
+  final List<Song> songs;
 
   const ArtistSongsScreen({
     super.key,
     required this.artistName,
     required this.controller,
-  });
+    List<Song>? songs,
+  }) : songs = songs ?? demoSongs;
 
   @override
   Widget build(BuildContext context) {
     List<String> extractArtists(String artistStr) {
-      String normalized = artistStr.replaceAll(RegExp(r'\s+(ft\.?|feat\.?|x|&|-)\s+|,\s*', caseSensitive: false), '|||');
-      return normalized.split('|||').map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toList();
+      final normalized = artistStr.replaceAll(
+        RegExp(
+          r'\s+(ft\.?|feat\.?|x|&|-)\s+|,\s*',
+          caseSensitive: false,
+        ),
+        '|||',
+      );
+
+      return normalized
+          .split('|||')
+          .map((e) => e.trim().toLowerCase())
+          .where((e) => e.isNotEmpty)
+          .toList();
     }
 
     final targetArtists = extractArtists(artistName);
 
-    final artistSongs = demoSongs.where((s) {
+    final artistSongs = songs.where((s) {
       final sourceArtists = extractArtists(s.artist);
       return targetArtists.any((target) => sourceArtists.contains(target));
     }).toList();
@@ -59,17 +74,10 @@ class ArtistSongsScreen extends StatelessWidget {
                       ),
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.asset(
-                          song.coverAsset,
+                        child: SizedBox(
                           width: 50,
                           height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.white10,
-                            child: const Icon(Icons.music_note),
-                          ),
+                          child: _buildSongCover(song),
                         ),
                       ),
                       title: Text(
@@ -89,7 +97,9 @@ class ArtistSongsScreen extends StatelessWidget {
                           if (isCurrentSong)
                             Padding(
                               padding: const EdgeInsets.only(right: 16),
-                              child: AnimatedEqualizer(isPlaying: controller.isPlaying),
+                              child: AnimatedEqualizer(
+                                isPlaying: controller.isPlaying,
+                              ),
                             ),
                           IconButton(
                             icon: const Icon(Icons.more_vert),
@@ -97,6 +107,7 @@ class ArtistSongsScreen extends StatelessWidget {
                               context,
                               song: song,
                               controller: controller,
+                              allSongs: songs,
                             ),
                           ),
                         ],
@@ -108,6 +119,7 @@ class ArtistSongsScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (_) => FullPlayerScreen(
                               controller: controller,
+                              allSongs: songs,
                             ),
                           ),
                         );
@@ -117,6 +129,35 @@ class ArtistSongsScreen extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildSongCover(Song song) {
+    if ((song.coverAsset ?? '').isNotEmpty) {
+      return Image.asset(
+        song.coverAsset!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    if ((song.coverUrl ?? '').isNotEmpty) {
+      return Image.network(
+        song.coverUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: Colors.white10,
+          child: const Icon(Icons.music_note),
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.white10,
+      child: const Icon(Icons.music_note),
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/song.dart';
 
 const List<Song> demoSongs = [
-  Song(
+  Song.local(
     id: 'song_01',
     title: 'Bình yên',
     artist: 'Vũ ft Binz',
@@ -11,7 +11,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/binhyen.lrc',
     color: Colors.deepOrange,
   ),
-  Song(
+  Song.local(
     id: 'song_02',
     title: 'Khế Ước',
     artist: 'The Flob ft CHIN ft Hà Lê',
@@ -20,7 +20,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/kheuoc.lrc',
     color: Colors.green,
   ),
-  Song(
+  Song.local(
     id: 'song_03',
     title: 'Tìm anh ghen',
     artist: 'Wxrdie ft LVK, Dangrangto, TeuYungBoy',
@@ -29,7 +29,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/timanhghen.lrc',
     color: Colors.blue,
   ),
-  Song(
+  Song.local(
     id: 'song_04',
     title: 'Tốt cho anh',
     artist: 'Dangrangto',
@@ -38,7 +38,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/totchoanh.lrc',
     color: Colors.amber,
   ),
-  Song(
+  Song.local(
     id: 'song_05',
     title: 'Xích Thêm Chút',
     artist: 'RPT Groovie ft tlinh x RPT MCK',
@@ -47,7 +47,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/xtc.lrc',
     color: Colors.purple,
   ),
-  Song(
+  Song.local(
     id: 'song_06',
     title: 'THERE\'S NO ONE AT ALL',
     artist: 'Sơn Tùng MTP',
@@ -56,7 +56,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/theresnooneatall.lrc',
     color: Colors.red,
   ),
-  Song(
+  Song.local(
     id: 'song_07',
     title: 'Đừng Làm Trái Tim Anh Đau',
     artist: 'Sơn Tùng MTP',
@@ -65,7 +65,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/Dunglamtraitimanhdau.lrc',
     color: Colors.teal,
   ),
-  Song(
+  Song.local(
     id: 'song_08',
     title: 'Chúng Ta Không Thuộc Về Nhau',
     artist: 'Sơn Tùng MTP',
@@ -74,7 +74,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/ChungtaKhongThuocVeNhau.lrc',
     color: Colors.indigo,
   ),
-  Song(
+  Song.local(
     id: 'song_09',
     title: 'Từng Là',
     artist: 'Vũ Cát Tường',
@@ -83,7 +83,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/TungLa.lrc',
     color: Colors.cyan,
   ),
-  Song(
+  Song.local(
     id: 'song_10',
     title: 'Die For You',
     artist: 'The Weeknd',
@@ -92,7 +92,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/DieForYou.lrc',
     color: Colors.orange,
   ),
-  Song(
+  Song.local(
     id: 'song_11',
     title: 'Timeless',
     artist: 'The Weeknd',
@@ -101,7 +101,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/Timeless.lrc',
     color: Colors.pink,
   ),
-  Song(
+  Song.local(
     id: 'song_12',
     title: 'One Of The Girls',
     artist: 'The Weeknd',
@@ -110,7 +110,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/OneOfTheGirls.lrc',
     color: Colors.lime,
   ),
-  Song(
+  Song.local(
     id: 'song_13',
     title: 'NOLOVENOLIFE',
     artist: 'HIEUTHUHAI',
@@ -119,7 +119,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/NOLOVENOLIFE.lrc',
     color: Colors.brown,
   ),
-  Song(
+  Song.local(
     id: 'song_14',
     title: 'Tối Nay Ta Đi Đâu Nhờ',
     artist: 'RPT MCK',
@@ -128,7 +128,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/ToiNayTaDiDauNho.lrc',
     color: Colors.deepPurple,
   ),
-  Song(
+  Song.local(
     id: 'song_15',
     title: '2GOILAYS',
     artist: 'DMT ft Dangrangto ft TeuYungBoy',
@@ -137,7 +137,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/2GOILAYS.lrc',
     color: Colors.lightBlue,
   ),
-  Song(
+  Song.local(
     id: 'song_16',
     title: 'Dạo Bước HongKong 1999',
     artist: 'NHONHO',
@@ -146,7 +146,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/DAOBUOCHONGKONG1999.lrc',
     color: Colors.lightGreen,
   ),
-  Song(
+  Song.local(
     id: 'song_17',
     title: 'Từng Quen',
     artist: 'WREN EVANS',
@@ -155,7 +155,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/TUNGQUEN.lrc',
     color: Colors.deepOrangeAccent,
   ),
-  Song(
+  Song.local(
     id: 'song_18',
     title: 'BERLIN',
     artist: 'Khoi Vu',
@@ -164,7 +164,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BERLIN.lrc',
     color: Colors.blueGrey,
   ),
-  Song(
+  Song.local(
     id: 'song_19',
     title: 'Blue Tequile',
     artist: 'Táo',
@@ -173,7 +173,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BlueTequile.lrc',
     color: Colors.greenAccent,
   ),
-  Song(
+  Song.local(
     id: 'song_20',
     title: 'BIRDS OF A FEATHER',
     artist: 'Billie Eilish',
@@ -182,7 +182,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BIRDSOFAFEATHER.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_21',
     title: 'Die With A Smile',
     artist: 'Lady Gaga ft Bruno Mars',
@@ -191,7 +191,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/DieWithASmile.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_22',
     title: 'Trước Khi Em Tồn Tại',
     artist: 'Thắng',
@@ -200,7 +200,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/TruocKhiEmTonTai.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_23',
     title: 'tinylove',
     artist: 'Thịnh Suy',
@@ -209,7 +209,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/tinylove.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_24',
     title: 'Phép Màu',
     artist: 'MAYDAYs ft Minh Tốc',
@@ -218,7 +218,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/PhepMau.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_25',
     title: 'Em Không Khóc',
     artist: 'buitruonglinh ft vuphungtien',
@@ -227,7 +227,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/EmKhongKhoc.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_26',
     title: 'Mất Kết Nối',
     artist: 'Dương Domic',
@@ -236,7 +236,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/MatKetNoi.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_27',
     title: 'Em',
     artist: 'Binz',
@@ -245,7 +245,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/Em.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_28',
     title: '1000 Ánh Mắt',
     artist: 'Shiki ft Obito',
@@ -254,7 +254,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/1000AnhMat.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_29',
     title: 'Tháp Yêu',
     artist: 'Cao Minh Thiên Tùng',
@@ -263,7 +263,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/ThapYeu.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_30',
     title: 'Sài Gòn Ơi',
     artist: 'Obito',
@@ -272,7 +272,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/SaiGonOi.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_31',
     title: 'Love is',
     artist: 'Dangrangto',
@@ -281,7 +281,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/Loveis.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_32',
     title: 'BAND4BAND',
     artist: 'CENTRAL CEE FT. LIL BABY',
@@ -290,7 +290,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BAND4BAND.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_33',
     title: 'BigDawgs',
     artist: 'Hanumankind Ft. Kalmi',
@@ -299,7 +299,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BigDawgs.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_34',
     title: 'EVILJ0RDAN',
     artist: 'Playboi Carti',
@@ -308,7 +308,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/EVILJ0RDAN.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_35',
     title: 'The Box',
     artist: 'Roddy Ricch',
@@ -317,7 +317,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/TheBox.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_36',
     title: 'Cơm Áo Gạo Tiền',
     artist: '7dnight',
@@ -326,7 +326,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/ComAoGaoTien.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_37',
     title: 'FE!N',
     artist: 'Travis Scott ft. Playboi Carti',
@@ -335,7 +335,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/FE!N.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_38',
     title: 'Em Của Ngày Hôm Qua',
     artist: 'Sơn Tùng MTP',
@@ -344,7 +344,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/EmCuaNgayHomQua.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_39',
     title: 'Waiting For You',
     artist: 'MONO',
@@ -353,7 +353,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/WaitingForYou.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_40',
     title: '05 (Không Phai)',
     artist: 'tangduytan x T.R.I x Phong Max',
@@ -362,7 +362,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/05KhongPhai.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_41',
     title: 'lovely',
     artist: 'Billie Eilish ft Khalid',
@@ -371,7 +371,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/lovely.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_42',
     title: 'bad guy',
     artist: 'Billie Eilish',
@@ -380,7 +380,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/badguy.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_43',
     title: 'when the party\'s over',
     artist: 'Billie Eilish',
@@ -389,7 +389,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/whenthepartysover.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_44',
     title: 'SAD!',
     artist: 'XXXTENTACION',
@@ -398,7 +398,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/SAD.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_45',
     title: 'MAY KIN THANH DO',
     artist: 'Obito ft. Richie D. ICY',
@@ -407,7 +407,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/MAYKINTHANHDO.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_46',
     title: 'Giờ Thì Ai Cười',
     artist: 'HIEUTHUHAI',
@@ -416,7 +416,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/GioThiAiCuoi.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_47',
     title: 'PHÓNG ZÌN ZÌN',
     artist: 'Low G x tlinh',
@@ -425,7 +425,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/PHONGZINZIN.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_48',
     title: 'nếu lúc đó',
     artist: 'tlinh',
@@ -434,7 +434,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/neulucdo.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_49',
     title: 'nữ siêu anh hùng',
     artist: 'tlinh',
@@ -443,7 +443,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/nusuAnhHung.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_50',
     title: 'Đợi',
     artist: '52Hz',
@@ -452,7 +452,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/DOI.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_51',
     title: 'Chìm Sâu',
     artist: 'RPT MCK ft Trung Trần',
@@ -461,7 +461,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/ChimSau.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_52',
     title: 'Cuốn Cho Anh Một Điếu Nữa Đi',
     artist: 'RPT MCK',
@@ -470,7 +470,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/CuonChoAnhMotDieuNuaDi.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_53',
     title: 'NU CEP',
     artist: 'Wxrdie',
@@ -479,7 +479,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/NUCEP.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_54',
     title: '0 AI NGHĨ',
     artist: 'Wxrdie',
@@ -488,7 +488,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/0AINGHI.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_55',
     title: 'CẦN GÌ NÓI IU',
     artist: 'Wxrdie',
@@ -497,7 +497,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/CANGINoIU.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_56',
     title: 'MOIEM',
     artist: 'Dangrangto',
@@ -506,7 +506,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/MOIEM.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_57',
     title: 'Feel At Home',
     artist: 'B Ray',
@@ -515,7 +515,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/FeelAtHome.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_58',
     title: 'Y Chang Em',
     artist: 'B Ray',
@@ -524,7 +524,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/YChangEm.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_59',
     title: 'BẢN NHẠC BUỒN',
     artist: 'B Ray',
@@ -533,7 +533,7 @@ const List<Song> demoSongs = [
     lyricsAsset: 'assets/lyrics_demo/BANNHACBUON.lrc',
     color: Colors.yellow,
   ),
-  Song(
+  Song.local(
     id: 'song_60',
     title: 'BẢN NHẠC CUỐI (cho em)',
     artist: 'B Ray',

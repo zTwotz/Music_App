@@ -67,7 +67,10 @@ class _RootShellState extends State<RootShell> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => FullPlayerScreen(controller: _audioController),
+        builder: (_) => FullPlayerScreen(
+          controller: _audioController,
+          allSongs: demoSongs,
+        ),
       ),
     );
   }
@@ -78,9 +81,8 @@ class _RootShellState extends State<RootShell> {
 
     final displayName = auth.displayName;
     final email = auth.email;
-    final avatarLetter = displayName.isNotEmpty
-        ? displayName.characters.first.toUpperCase()
-        : 'U';
+    final avatarLetter =
+        displayName.isNotEmpty ? displayName.characters.first.toUpperCase() : 'U';
 
     final screens = [
       HomeScreen(
@@ -92,7 +94,10 @@ class _RootShellState extends State<RootShell> {
         controller: _audioController,
         songs: demoSongs,
       ),
-      LibraryScreen(controller: _audioController),
+      LibraryScreen(
+        controller: _audioController,
+        songs: demoSongs,
+      ),
     ];
 
     return Scaffold(
