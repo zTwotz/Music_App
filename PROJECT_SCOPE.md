@@ -1,5 +1,11 @@
 # PROJECT_SCOPE.md
-flutter clean && flutter pub get    
+flutter clean && flutter pub get
+
+tinh.musicapp@gmail.com
+tinh123456
+
+nguyenngoctinh011258@gmail.com
+Twot2k5musicapp
 ## 1. Tên đề tài
 
 Ứng dụng nghe nhạc di động phong cách Spotify mini
