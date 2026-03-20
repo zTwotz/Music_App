@@ -25,6 +25,7 @@ class AudioPlayerController extends ChangeNotifier {
   bool _isShuffleActive = false;
   bool _isRepeatActive = false;
   final Set<String> _favoriteSongIds = {};
+  final Set<String> _followedArtistNames = {};
 
   final Map<String, List<String>> _playlists = {
     'Nhạc chill đêm': ['song_19', 'song_18', 'song_23'],
@@ -74,6 +75,7 @@ class AudioPlayerController extends ChangeNotifier {
   bool get isFavorite =>
       _currentSong != null && _favoriteSongIds.contains(_currentSong!.id);
   Set<String> get favoriteSongIds => _favoriteSongIds;
+  Set<String> get followedArtistNames => _followedArtistNames;
   Map<String, List<String>> get playlists => _playlists;
 
   double get progress {
@@ -302,6 +304,20 @@ class AudioPlayerController extends ChangeNotifier {
       _favoriteSongIds.remove(id);
     } else {
       _favoriteSongIds.add(id);
+    }
+    notifyListeners();
+  }
+
+  bool isFollowing(String artistName) {
+    return _followedArtistNames.contains(artistName.trim());
+  }
+
+  void toggleFollow(String artistName) {
+    final name = artistName.trim();
+    if (_followedArtistNames.contains(name)) {
+      _followedArtistNames.remove(name);
+    } else {
+      _followedArtistNames.add(name);
     }
     notifyListeners();
   }

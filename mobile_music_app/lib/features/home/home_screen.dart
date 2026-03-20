@@ -1,11 +1,14 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
+import '../catalog/song_catalog_provider.dart';
 import '../library/favorite_songs_screen.dart';
 import '../player/full_player_screen.dart';
 import '../playlist/playlist_detail_screen.dart';
@@ -226,329 +229,361 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  child: const CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Color(0xFFF3759F),
-                    child: Text(
-                      'T',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
+      child: RefreshIndicator(
+        onRefresh: () => context.read<SongCatalogProvider>().refreshSongs(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    child: const CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Color(0xFFF3759F),
+                      child: Text(
+                        'T',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                _buildTopChip(
-                  'Tất cả',
-                  isSelected: _selectedFilter == 'Tất cả',
-                  isOutlined: _selectedFilter != 'Tất cả',
-                  onTap: () => setState(() => _selectedFilter = 'Tất cả'),
-                ),
-                const SizedBox(width: 8),
-                if (_selectedFilter.startsWith('Âm nhạc')) ...[
-                  _buildJoinedChip(
-                    leftLabel: 'Âm nhạc',
-                    rightLabel: 'Đang theo dõi',
-                    leftActiveColor: const Color(0xFF90CEFA),
-                    rightActiveColor: const Color(0xFF90CEFA),
-                    isLeftActive: _selectedFilter == 'Âm nhạc',
-                    onLeftTap: () => setState(() => _selectedFilter = 'Âm nhạc'),
-                    onRightTap: () =>
-                        setState(() => _selectedFilter = 'Âm nhạc - Đang theo dõi'),
-                  ),
-                ] else ...[
+                  const SizedBox(width: 12),
                   _buildTopChip(
-                    'Âm nhạc',
-                    isSelected: false,
+                    'Tất cả',
+                    isSelected: _selectedFilter == 'Tất cả',
                     isOutlined: _selectedFilter != 'Tất cả',
-                    onTap: () => setState(() => _selectedFilter = 'Âm nhạc'),
+                    onTap: () => setState(() => _selectedFilter = 'Tất cả'),
                   ),
+                  const SizedBox(width: 8),
+                  if (_selectedFilter.startsWith('Âm nhạc')) ...[
+                    _buildJoinedChip(
+                      leftLabel: 'Âm nhạc',
+                      rightLabel: 'Đang theo dõi',
+                      leftActiveColor: const Color(0xFF90CEFA),
+                      rightActiveColor: const Color(0xFF90CEFA),
+                      isLeftActive: _selectedFilter == 'Âm nhạc',
+                      onLeftTap: () => setState(() => _selectedFilter = 'Âm nhạc'),
+                      onRightTap: () => setState(
+                        () => _selectedFilter = 'Âm nhạc - Đang theo dõi',
+                      ),
+                    ),
+                  ] else ...[
+                    _buildTopChip(
+                      'Âm nhạc',
+                      isSelected: false,
+                      isOutlined: _selectedFilter != 'Tất cả',
+                      onTap: () => setState(() => _selectedFilter = 'Âm nhạc'),
+                    ),
+                  ],
+                  const SizedBox(width: 8),
+                  if (_selectedFilter.startsWith('Podcasts')) ...[
+                    _buildJoinedChip(
+                      leftLabel: 'Podcasts',
+                      rightLabel: 'Đang theo dõi',
+                      leftActiveColor: const Color(0xFF1ED760),
+                      rightActiveColor: const Color(0xFF1ED760),
+                      isLeftActive: _selectedFilter == 'Podcasts',
+                      onLeftTap: () => setState(() => _selectedFilter = 'Podcasts'),
+                      onRightTap: () => setState(
+                        () => _selectedFilter = 'Podcasts - Đang theo dõi',
+                      ),
+                    ),
+                  ] else ...[
+                    _buildTopChip(
+                      'Podcasts',
+                      isSelected: false,
+                      isOutlined: _selectedFilter != 'Tất cả',
+                      onTap: () => setState(() => _selectedFilter = 'Podcasts'),
+                    ),
+                  ],
                 ],
-                const SizedBox(width: 8),
-                if (_selectedFilter.startsWith('Podcasts')) ...[
-                  _buildJoinedChip(
-                    leftLabel: 'Podcasts',
-                    rightLabel: 'Đang theo dõi',
-                    leftActiveColor: const Color(0xFF1ED760),
-                    rightActiveColor: const Color(0xFF1ED760),
-                    isLeftActive: _selectedFilter == 'Podcasts',
-                    onLeftTap: () => setState(() => _selectedFilter = 'Podcasts'),
-                    onRightTap: () => setState(
-                      () => _selectedFilter = 'Podcasts - Đang theo dõi',
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (_selectedFilter == 'Âm nhạc - Đang theo dõi') ...[
+              const Text(
+                'Bài hát từ nghệ sĩ bạn theo dõi',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ...widget.songs.where((song) {
+                final artist = song.artist.toLowerCase();
+                return widget.controller.followedArtistNames.any(
+                  (f) => artist.contains(f.toLowerCase()),
+                );
+              }).map((song) => _buildSongItem(song)),
+              if (widget.songs.where((song) {
+                final artist = song.artist.toLowerCase();
+                return widget.controller.followedArtistNames.any(
+                  (f) => artist.contains(f.toLowerCase()),
+                );
+              }).isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Text(
+                      'Bạn chưa theo dõi nghệ sĩ nào\nhoặc nghệ sĩ đó chưa có bài hát.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white54),
                     ),
                   ),
-                ] else ...[
-                  _buildTopChip(
-                    'Podcasts',
-                    isSelected: false,
-                    isOutlined: _selectedFilter != 'Tất cả',
-                    onTap: () => setState(() => _selectedFilter = 'Podcasts'),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Nghe gần đây',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            itemCount: recentItems.length,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisExtent: 56,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemBuilder: (context, index) {
-              final item = recentItems[index];
+                ),
+            ] else ...[
+              const Text(
+                'Nghe gần đây',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            const SizedBox(height: 12),
+            GridView.builder(
+              itemCount: recentItems.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisExtent: 56,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemBuilder: (context, index) {
+                final item = recentItems[index];
 
-              return AnimatedBuilder(
-                animation: widget.controller,
-                builder: (context, _) {
-                  String displayImage = item['image'] as String? ?? '';
-                  bool isNetwork = item['isNetwork'] as bool? ?? false;
+                return AnimatedBuilder(
+                  animation: widget.controller,
+                  builder: (context, _) {
+                    String displayImage = item['image'] as String? ?? '';
+                    bool isNetwork = item['isNetwork'] as bool? ?? false;
 
-                  if (item['isFavoriteList'] == true) {
-                    if (widget.controller.favoriteSongIds.isNotEmpty &&
-                        widget.songs.isNotEmpty) {
-                      final firstId = widget.controller.favoriteSongIds.first;
-                      final song = widget.songs.firstWhere(
-                        (s) => s.id == firstId,
-                        orElse: () => widget.songs.first,
-                      );
+                    if (item['isFavoriteList'] == true) {
+                      if (widget.controller.favoriteSongIds.isNotEmpty &&
+                          widget.songs.isNotEmpty) {
+                        final firstId = widget.controller.favoriteSongIds.first;
+                        final song = widget.songs.firstWhere(
+                          (s) => s.id == firstId,
+                          orElse: () => widget.songs.first,
+                        );
 
-                      displayImage = song.coverAsset ?? song.coverUrl ?? '';
-                      isNetwork =
-                          (song.coverAsset ?? '').isEmpty &&
-                          (song.coverUrl ?? '').isNotEmpty;
-                    } else {
-                      displayImage = '';
-                      isNetwork = false;
+                        displayImage = song.coverAsset ?? song.coverUrl ?? '';
+                        isNetwork = (song.coverAsset ?? '').isEmpty &&
+                            (song.coverUrl ?? '').isNotEmpty;
+                      } else {
+                        displayImage = '';
+                        isNetwork = false;
+                      }
                     }
-                  }
 
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: item['onTap'] as VoidCallback?,
-                      borderRadius: BorderRadius.circular(6),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF242424),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 56,
-                              height: 56,
-                              child: displayImage.isEmpty
-                                  ? Container(
-                                      color: Colors.white10,
-                                      child: const Icon(
-                                        Icons.favorite,
-                                        color: Colors.white70,
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: item['onTap'] as VoidCallback?,
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF242424),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 56,
+                                height: 56,
+                                child: displayImage.isEmpty
+                                    ? Container(
+                                        color: Colors.white10,
+                                        child: const Icon(
+                                          Icons.favorite,
+                                          color: Colors.white70,
+                                        ),
+                                      )
+                                    : _buildImageByPath(
+                                        displayImage,
+                                        isNetwork: isNetwork,
                                       ),
-                                    )
-                                  : _buildImageByPath(
-                                      displayImage,
-                                      isNetwork: isNetwork,
-                                    ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                item['title'] as String? ?? '',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item['title'] as String? ?? '',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 28),
-          const Text(
-            'Khơi nguồn cảm hứng',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 190,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: dailyMixes.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (context, index) {
-                final mix = dailyMixes[index];
-                final image = mix['image'] as String? ?? '';
-                final isNetwork = mix['isNetwork'] as bool? ?? false;
-                final songs = mix['songs'] as List<Song>? ?? [];
-
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PlaylistDetailScreen(
-                          title: mix['title'] as String? ?? '',
-                          songs: songs,
-                          controller: widget.controller,
-                          allSongs: widget.songs,
+                              const SizedBox(width: 8),
+                            ],
+                          ),
                         ),
                       ),
                     );
                   },
-                  child: SizedBox(
-                    width: 140,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 140,
-                          decoration: BoxDecoration(
-                            color: Colors.white10,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: image.isEmpty
-                              ? const Center(
-                                  child: Icon(
-                                    Icons.album,
-                                    size: 48,
-                                    color: Colors.white70,
-                                  ),
-                                )
-                              : _buildImageByPath(
-                                  image,
-                                  isNetwork: isNetwork,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          mix['title'] as String? ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               },
             ),
-          ),
-          const SizedBox(height: 28),
-          const Text(
-            'Danh sách các bài hát',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...widget.songs.map(
-            (song) {
-              return AnimatedBuilder(
-                animation: widget.controller,
-                builder: (context, _) {
-                  final isCurrentSong = widget.controller.currentSong?.id == song.id;
+            const SizedBox(height: 28),
+            const Text(
+              'Khơi nguồn cảm hứng',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 190,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: dailyMixes.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final mix = dailyMixes[index];
+                  final image = mix['image'] as String? ?? '';
+                  final isNetwork = mix['isNetwork'] as bool? ?? false;
+                  final songs = mix['songs'] as List<Song>? ?? [];
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
+                  return GestureDetector(
                     onTap: () {
-                      widget.controller.selectSong(song, queue: widget.songs);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => FullPlayerScreen(
+                          builder: (_) => PlaylistDetailScreen(
+                            title: mix['title'] as String? ?? '',
+                            songs: songs,
                             controller: widget.controller,
                             allSongs: widget.songs,
                           ),
                         ),
                       );
                     },
-                    leading: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: isCurrentSong
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.white10,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _buildSongCover(song),
-                      ),
-                    ),
-                    title: Text(
-                      song.title,
-                      style: TextStyle(
-                        color: isCurrentSong ? Colors.green : Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(song.artist),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isCurrentSong)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 16),
-                            child: AnimatedEqualizer(
-                              isPlaying: widget.controller.isPlaying,
+                    child: SizedBox(
+                      width: 140,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: image.isEmpty
+                                ? const Center(
+                                    child: Icon(
+                                      Icons.album,
+                                      size: 48,
+                                      color: Colors.white70,
+                                    ),
+                                  )
+                                : _buildImageByPath(
+                                    image,
+                                    isNetwork: isNetwork,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                  ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            mix['title'] as String? ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
-                        IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () => showSongOptionsBottomSheet(
-                            context,
-                            song: song,
-                            controller: widget.controller,
-                            allSongs: widget.songs,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            const Text(
+              'Danh sách các bài hát',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...widget.songs.map((song) => _buildSongItem(song)),
+            ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSongItem(Song song) {
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) {
+        final isCurrentSong = widget.controller.currentSong?.id == song.id;
+
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          onTap: () {
+            widget.controller.selectSong(song, queue: widget.songs);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FullPlayerScreen(
+                  controller: widget.controller,
+                  allSongs: widget.songs,
+                ),
+              ),
+            );
+          },
+          leading: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: isCurrentSong ? Colors.green.withOpacity(0.3) : Colors.white10,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: _buildSongCover(song),
+            ),
+          ),
+          title: Text(
+            song.title,
+            style: TextStyle(
+              color: isCurrentSong ? Colors.green : Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(song.artist),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isCurrentSong)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: AnimatedEqualizer(
+                    isPlaying: widget.controller.isPlaying,
+                  ),
+                ),
+              IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () => showSongOptionsBottomSheet(
+                  context,
+                  song: song,
+                  controller: widget.controller,
+                  allSongs: widget.songs,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -674,7 +709,8 @@ class HomeScreenState extends State<HomeScreen> {
           GestureDetector(
             onTap: onLeftTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isLeftActive ? leftActiveColor : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
@@ -691,7 +727,8 @@ class HomeScreenState extends State<HomeScreen> {
           GestureDetector(
             onTap: onRightTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: !isLeftActive ? rightActiveColor : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),

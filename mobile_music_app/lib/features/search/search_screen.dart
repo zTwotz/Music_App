@@ -1,10 +1,13 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
+import '../catalog/song_catalog_provider.dart';
 import '../player/full_player_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -122,277 +125,304 @@ class _SearchScreenState extends State<SearchScreen> {
       animation: widget.controller,
       builder: (context, _) {
         return SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Scaffold.of(context).openDrawer();
-                    },
-                    child: const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Color(0xFFF3759F),
-                      child: Text(
-                        'T',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
+          child: RefreshIndicator(
+            onRefresh: () => context.read<SongCatalogProvider>().refreshSongs(),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Scaffold.of(context).openDrawer();
+                      },
+                      child: const CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Color(0xFFF3759F),
+                        child: Text(
+                          'T',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                          ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Tìm kiếm',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 12),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Bạn muốn nghe gì?',
+                      hintStyle: const TextStyle(color: Colors.black54),
+                      prefixIcon:
+                          const Icon(Icons.search, color: Colors.black87),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: Colors.black87,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                                _searchFocusNode.unfocus();
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                if (!_isSearching) ...[
                   const Text(
-                    'Tìm kiếm',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    'Khám phá nội dung mới mẻ',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  focusNode: _searchFocusNode,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Bạn muốn nghe gì?',
-                    hintStyle: const TextStyle(color: Colors.black54),
-                    prefixIcon: const Icon(Icons.search, color: Colors.black87),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.black87),
-                            onPressed: () {
-                              _searchController.clear();
-                              _searchFocusNode.unfocus();
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-              if (!_isSearching) ...[
-                const Text(
-                  'Khám phá nội dung mới mẻ',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 48,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: exploreTags.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () => _handleTagSelection(exploreTags[index]),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF262626),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: Colors.white10),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 48,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: exploreTags.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () => _handleTagSelection(exploreTags[index]),
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF262626),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: Text(
+                              exploreTags[index],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            exploreTags[index],
-                            style: const TextStyle(fontWeight: FontWeight.w500),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  const Text(
+                    'Duyệt tìm tất cả',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.builder(
+                    itemCount: browseItems.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 100,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = browseItems[index];
+                      final song = item['song'] as Song;
+
+                      return GestureDetector(
+                        onTap: () {
+                          _searchController.text =
+                              item['title'] as String? ?? '';
+                          _searchFocusNode.unfocus();
+                          _showRandomSongs();
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: _buildSongCover(song),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.2),
+                                      Colors.transparent,
+                                      Colors.black.withOpacity(0.7),
+                                    ],
+                                    stops: const [0.0, 0.5, 1.0],
+                                  ),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Text(
+                                    item['title'] as String? ?? '',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(0, 1),
+                                          blurRadius: 4,
+                                          color: Colors.black,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
                     },
                   ),
-                ),
-                const SizedBox(height: 32),
-                const Text(
-                  'Duyệt tìm tất cả',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                GridView.builder(
-                  itemCount: browseItems.length,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisExtent: 100,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = browseItems[index];
-                    final song = item['song'] as Song;
-
-                    return GestureDetector(
-                      onTap: () {
-                        _searchController.text = item['title'] as String? ?? '';
-                        _searchFocusNode.unfocus();
-                        _showRandomSongs();
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: _buildSongCover(song),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black.withOpacity(0.2),
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
-                                  ],
-                                  stops: const [0.0, 0.5, 1.0],
-                                ),
-                              ),
-                              child: Align(
-                                alignment: Alignment.bottomLeft,
-                                child: Text(
-                                  item['title'] as String? ?? '',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                    shadows: [
-                                      Shadow(
-                                        offset: Offset(0, 1),
-                                        blurRadius: 4,
-                                        color: Colors.black,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ] else ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Kết quả tìm kiếm',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _searchController.clear();
-                        _searchFocusNode.unfocus();
-                      },
-                      child: const Text(
-                        'Hủy',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_filteredSongs.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 40),
-                    child: Center(
-                      child: Text(
-                        'Không tìm thấy kết quả nào',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  )
-                else
-                  ..._filteredSongs.map((song) {
-                    final isCurrentSong =
-                        widget.controller.currentSong?.id == song.id;
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      onTap: () {
-                        widget.controller.selectSong(song, queue: _filteredSongs);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FullPlayerScreen(
-                              controller: widget.controller,
-                              allSongs: widget.songs,
-                            ),
-                          ),
-                        );
-                      },
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 52,
-                          height: 52,
-                          child: _buildSongCover(song),
-                        ),
-                      ),
-                      title: Text(
-                        song.title,
+                ] else ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Kết quả tìm kiếm',
                         style: TextStyle(
-                          color: isCurrentSong ? Colors.green : Colors.white,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      subtitle: Text(
-                        song.artist,
-                        style: const TextStyle(color: Colors.white70),
+                      TextButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          _searchFocusNode.unfocus();
+                        },
+                        child: const Text(
+                          'Hủy',
+                          style: TextStyle(color: Colors.white70),
+                        ),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isCurrentSong)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: AnimatedEqualizer(
-                                isPlaying: widget.controller.isPlaying,
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_filteredSongs.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Center(
+                        child: Text(
+                          'Không tìm thấy kết quả nào',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._filteredSongs.map((song) {
+                      final isCurrentSong =
+                          widget.controller.currentSong?.id == song.id;
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        onTap: () {
+                          widget.controller
+                              .selectSong(song, queue: _filteredSongs);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FullPlayerScreen(
+                                controller: widget.controller,
+                                allSongs: widget.songs,
                               ),
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () => showSongOptionsBottomSheet(
-                              context,
-                              song: song,
-                              controller: widget.controller,
-                              allSongs: widget.songs,
-                            ),
+                          );
+                        },
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 52,
+                            height: 52,
+                            child: _buildSongCover(song),
                           ),
-                        ],
-                      ),
-                    );
-                  }),
+                        ),
+                        title: Text(
+                          song.title,
+                          style: TextStyle(
+                            color: isCurrentSong ? Colors.green : Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          song.artist,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isCurrentSong)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 16),
+                                child: AnimatedEqualizer(
+                                  isPlaying: widget.controller.isPlaying,
+                                ),
+                              ),
+                            IconButton(
+                              icon: const Icon(Icons.more_vert),
+                              onPressed: () => showSongOptionsBottomSheet(
+                                context,
+                                song: song,
+                                controller: widget.controller,
+                                allSongs: widget.songs,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                ],
               ],
-            ],
+            ),
           ),
         );
       },

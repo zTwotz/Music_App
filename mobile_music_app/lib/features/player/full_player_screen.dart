@@ -3,6 +3,7 @@ import '../../core/audio/audio_player_controller.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
+import '../artist/artist_songs_screen.dart';
 import 'lyrics_screen.dart';
 
 class FullPlayerScreen extends StatelessWidget {
@@ -108,11 +109,10 @@ class FullPlayerScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                song.artist,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  color: Colors.white70,
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: _buildArtistLinks(context, song.artist),
                                 ),
                               ),
                             ],
@@ -224,6 +224,60 @@ class FullPlayerScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  List<Widget> _buildArtistLinks(BuildContext context, String artistStr) {
+    final normalized = artistStr.replaceAll(
+      RegExp(
+        r'\s+(ft\.?|feat\.?|x|&|-)\s+|,\s*',
+        caseSensitive: false,
+      ),
+      '|||',
+    );
+
+    final names = normalized.split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
+    List<Widget> links = [];
+    for (int i = 0; i < names.length; i++) {
+      links.add(
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ArtistSongsScreen(
+                  artistName: names[i],
+                  controller: controller,
+                  songs: allSongs,
+                ),
+              ),
+            );
+          },
+          child: Text(
+            names[i],
+            style: const TextStyle(
+              fontSize: 17,
+              color: Colors.white70,
+              decoration: TextDecoration.underline,
+              decorationColor: Colors.white38,
+            ),
+          ),
+        ),
+      );
+
+      if (i < names.length - 1) {
+        links.add(
+          const Text(
+            ' ft. ',
+            style: TextStyle(
+              fontSize: 17,
+              color: Colors.white38,
+            ),
+          ),
+        );
+      }
+    }
+    return links;
   }
 
   Widget _buildSongCover(Song song) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/data/demo_songs.dart';
@@ -7,7 +8,7 @@ import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../player/full_player_screen.dart';
 
-class ArtistSongsScreen extends StatelessWidget {
+class ArtistSongsScreen extends StatefulWidget {
   final String artistName;
   final AudioPlayerController controller;
   final List<Song> songs;
@@ -20,7 +21,28 @@ class ArtistSongsScreen extends StatelessWidget {
   }) : songs = songs ?? demoSongs;
 
   @override
-  Widget build(BuildContext context) {
+  State<ArtistSongsScreen> createState() => _ArtistSongsScreenState();
+}
+
+class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
+  late List<Song> artistSongs;
+  final ScrollController _scrollController = ScrollController();
+  double _opacity = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _findArtistSongs();
+    _scrollController.addListener(() {
+      final offset = _scrollController.offset;
+      final newOpacity = (offset / 150).clamp(0.0, 1.0);
+      if (newOpacity != _opacity) {
+        setState(() => _opacity = newOpacity);
+      }
+    });
+  }
+
+  void _findArtistSongs() {
     List<String> extractArtists(String artistStr) {
       final normalized = artistStr.replaceAll(
         RegExp(
@@ -37,96 +59,347 @@ class ArtistSongsScreen extends StatelessWidget {
           .toList();
     }
 
-    final targetArtists = extractArtists(artistName);
+    final targetArtist = widget.artistName.trim().toLowerCase();
 
-    final artistSongs = songs.where((s) {
+    artistSongs = widget.songs.where((s) {
       final sourceArtists = extractArtists(s.artist);
-      return targetArtists.any((target) => sourceArtists.contains(target));
+      return sourceArtists.contains(targetArtist);
     }).toList();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String? artistImage;
+    if (widget.artistName == 'Sơn Tùng MTP' || widget.artistName == 'Sơn Tùng M-TP') {
+      artistImage = 'assets/covers_demo/sontung_profile.jpg';
+    } else if (widget.artistName == 'The Weeknd') {
+      artistImage = 'assets/covers_demo/theweeknd_profile.jpg';
+    } else {
+      try {
+        final song = artistSongs.first;
+        artistImage = song.coverAsset ?? song.coverUrl;
+      } catch (_) {}
+    }
 
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, _) {
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF121212),
-            title: Text('Bài hát của $artistName'),
-          ),
-          backgroundColor: const Color(0xFF121212),
-          body: artistSongs.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Không có bài hát nào',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: artistSongs.length,
-                  padding: const EdgeInsets.only(bottom: 120),
-                  itemBuilder: (context, index) {
-                    final song = artistSongs[index];
-                    final isCurrentSong = controller.currentSong?.id == song.id;
+        final isFollowing = widget.controller.isFollowing(widget.artistName);
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+        return Scaffold(
+          backgroundColor: const Color(0xFF121212),
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 330,
+                pinned: true,
+                backgroundColor: const Color(0xFF121212),
+                elevation: 0,
+                leading: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black26,
+                    ),
+                    child: const Icon(Icons.arrow_back),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Opacity(
+                    opacity: _opacity,
+                    child: Text(
+                      widget.artistName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 50,
-                          height: 50,
-                          child: _buildSongCover(song),
+                    ),
+                  ),
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (artistImage != null)
+                        artistImage.startsWith('http')
+                            ? Image.network(artistImage, fit: BoxFit.cover)
+                            : Image.asset(artistImage, fit: BoxFit.cover)
+                      else
+                        Container(color: Colors.grey[900]),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.transparent,
+                              Colors.black54,
+                              Colors.black,
+                            ],
+                          ),
                         ),
                       ),
-                      title: Text(
-                        song.title,
-                        style: TextStyle(
-                          color: isCurrentSong ? Colors.green : Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        song.artist,
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isCurrentSong)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: AnimatedEqualizer(
-                                isPlaying: controller.isPlaying,
+                      Positioned(
+                        left: 20,
+                        bottom: 20,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.artistName.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -2,
+                                color: Colors.white,
                               ),
                             ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert),
-                            onPressed: () => showSongOptionsBottomSheet(
-                              context,
-                              song: song,
-                              controller: controller,
-                              allSongs: songs,
+                            const Text(
+                              '231.698 người nghe hằng tháng',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      onTap: () {
-                        controller.selectSong(song, queue: artistSongs);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FullPlayerScreen(
-                              controller: controller,
-                              allSongs: songs,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                    ],
+                  ),
                 ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFF1ED760),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            if (artistSongs.isNotEmpty) {
+                              widget.controller.selectSong(
+                                artistSongs.first,
+                                queue: artistSongs,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FullPlayerScreen(
+                                    controller: widget.controller,
+                                    allSongs: widget.songs,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.play_arrow,
+                            color: Colors.black,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () {
+                          if (artistSongs.isNotEmpty) {
+                            final shuffled = List<Song>.from(artistSongs)..shuffle();
+                            widget.controller.selectSong(
+                              shuffled.first,
+                              queue: shuffled,
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FullPlayerScreen(
+                                  controller: widget.controller,
+                                  allSongs: widget.songs,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.shuffle, color: Colors.white70),
+                        iconSize: 28,
+                      ),
+                      const SizedBox(width: 16),
+                      OutlinedButton(
+                        onPressed: () {
+                          widget.controller.toggleFollow(widget.artistName);
+                          HapticFeedback.mediumImpact();
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                        ),
+                        child: Text(
+                          isFollowing ? 'Đang theo dõi' : 'Theo dõi',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.more_horiz, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Text(
+                    'Phổ biến',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              artistSongs.isEmpty
+                  ? const SliverToBoxAdapter(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Text(
+                            'Không có bài hát nào',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ),
+                      ),
+                    )
+                  : SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final song = artistSongs[index];
+                          final isCurrentSong =
+                              widget.controller.currentSong?.id == song.id;
+
+                          return InkWell(
+                            onTap: () {
+                              widget.controller.selectSong(
+                                song,
+                                queue: artistSongs,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FullPlayerScreen(
+                                    controller: widget.controller,
+                                    allSongs: widget.songs,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 30,
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white54,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: SizedBox(
+                                      width: 48,
+                                      height: 48,
+                                      child: _buildSongCover(song),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          song.title,
+                                          style: TextStyle(
+                                            color: isCurrentSong
+                                                ? Colors.green
+                                                : Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (isCurrentSong)
+                                          const Text(
+                                            'Đang phát',
+                                            style: TextStyle(
+                                              color: Colors.green,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (isCurrentSong) ...[
+                                    AnimatedEqualizer(
+                                      isPlaying: widget.controller.isPlaying,
+                                    ),
+                                    const SizedBox(width: 16),
+                                  ],
+                                  IconButton(
+                                    onPressed: () => showSongOptionsBottomSheet(
+                                      context,
+                                      song: song,
+                                      controller: widget.controller,
+                                      allSongs: widget.songs,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.more_vert,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: artistSongs.length,
+                      ),
+                    ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 140),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -137,27 +410,16 @@ class ArtistSongsScreen extends StatelessWidget {
       return Image.asset(
         song.coverAsset!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          color: Colors.white10,
-          child: const Icon(Icons.music_note),
-        ),
+        errorBuilder: (_, __, ___) => Container(color: Colors.white10),
       );
     }
-
     if ((song.coverUrl ?? '').isNotEmpty) {
       return Image.network(
         song.coverUrl!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
-          color: Colors.white10,
-          child: const Icon(Icons.music_note),
-        ),
+        errorBuilder: (_, __, ___) => Container(color: Colors.white10),
       );
     }
-
-    return Container(
-      color: Colors.white10,
-      child: const Icon(Icons.music_note),
-    );
+    return Container(color: Colors.white10);
   }
 }

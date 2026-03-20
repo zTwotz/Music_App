@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/models/song.dart';
 import '../artist/artist_songs_screen.dart';
+import '../catalog/song_catalog_provider.dart';
 import '../playlist/playlist_detail_screen.dart';
 import 'favorite_songs_screen.dart';
 
@@ -125,7 +127,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         for (final song in widget.songs) {
           allArtistsSet.addAll(_extractIndividualArtists(song.artist));
         }
-        final sortedArtists = allArtistsSet.toList()..sort();
+        
+        final followedArtists = allArtistsSet.where((name) => widget.controller.followedArtistNames.contains(name.trim())).toList();
+        final sortedArtists = followedArtists..sort();
 
         final playlists = widget.controller.playlists.keys.map((name) {
           final songIds = widget.controller.playlists[name]!;
@@ -324,114 +328,120 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
-                  itemCount: filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    final bool isSpecial = item['isSpecial'] == true;
-                    final bool isArtist = item['type'] == 'Artist';
-                    final String? imagePath = item['image'] as String?;
-                    final bool isNetwork = item['isNetwork'] as bool? ?? false;
+                child: RefreshIndicator(
+                  onRefresh: () =>
+                      context.read<SongCatalogProvider>().refreshSongs(),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
+                    itemCount: filteredItems.length,
+                    itemBuilder: (context, index) {
+                      final item = filteredItems[index];
+                      final bool isSpecial = item['isSpecial'] == true;
+                      final bool isArtist = item['type'] == 'Artist';
+                      final String? imagePath = item['image'] as String?;
+                      final bool isNetwork = item['isNetwork'] as bool? ?? false;
 
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                      onTap: () {
-                        if (isSpecial) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => FavoriteSongsScreen(
-                                controller: widget.controller,
-                                songs: widget.songs,
+                      return ListTile(
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 4),
+                        onTap: () {
+                          if (isSpecial) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FavoriteSongsScreen(
+                                  controller: widget.controller,
+                                  songs: widget.songs,
+                                ),
                               ),
-                            ),
-                          );
-                        } else if (isArtist) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ArtistSongsScreen(
-                                artistName: item['title'],
-                                controller: widget.controller,
-                                songs: widget.songs,
+                            );
+                          } else if (isArtist) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ArtistSongsScreen(
+                                  artistName: item['title'],
+                                  controller: widget.controller,
+                                  songs: widget.songs,
+                                ),
                               ),
-                            ),
-                          );
-                        } else {
-                          final songIds =
-                              widget.controller.playlists[item['id']]!;
-                          final playlistSongs = widget.songs
-                              .where((s) => songIds.contains(s.id))
-                              .toList();
+                            );
+                          } else {
+                            final songIds =
+                                widget.controller.playlists[item['id']]!;
+                            final playlistSongs = widget.songs
+                                .where((s) => songIds.contains(s.id))
+                                .toList();
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PlaylistDetailScreen(
-                                title: item['title'],
-                                songs: playlistSongs,
-                                controller: widget.controller,
-                                allSongs: widget.songs,
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => PlaylistDetailScreen(
+                                  title: item['title'],
+                                  songs: playlistSongs,
+                                  controller: widget.controller,
+                                  allSongs: widget.songs,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                      leading: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: isSpecial ? null : const Color(0xFF282828),
-                          gradient: isSpecial && imagePath == null
-                              ? const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color(0xFF450AF5),
-                                    Color(0xFFC4EFD9),
-                                  ],
+                            );
+                          }
+                        },
+                        leading: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: isSpecial ? null : const Color(0xFF282828),
+                            gradient: isSpecial && imagePath == null
+                                ? const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF450AF5),
+                                      Color(0xFFC4EFD9),
+                                    ],
+                                  )
+                                : null,
+                            shape:
+                                isArtist ? BoxShape.circle : BoxShape.rectangle,
+                            borderRadius:
+                                isArtist ? null : BorderRadius.circular(8),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: imagePath != null
+                              ? _buildImageByPath(
+                                  imagePath,
+                                  isNetwork: isNetwork,
                                 )
-                              : null,
-                          shape:
-                              isArtist ? BoxShape.circle : BoxShape.rectangle,
-                          borderRadius:
-                              isArtist ? null : BorderRadius.circular(8),
+                              : Icon(
+                                  isSpecial
+                                      ? Icons.favorite
+                                      : (isArtist
+                                          ? Icons.person
+                                          : Icons.music_note),
+                                  color: Colors.white,
+                                  size: isSpecial ? 28 : 24,
+                                ),
                         ),
-                        clipBehavior: Clip.antiAlias,
-                        child: imagePath != null
-                            ? _buildImageByPath(
-                                imagePath,
-                                isNetwork: isNetwork,
-                              )
-                            : Icon(
-                                isSpecial
-                                    ? Icons.favorite
-                                    : (isArtist
-                                        ? Icons.person
-                                        : Icons.music_note),
-                                color: Colors.white,
-                                size: isSpecial ? 28 : 24,
-                              ),
-                      ),
-                      title: Text(
-                        item['title'],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                        title: Text(
+                          item['title'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        item['subtitle'],
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 13,
+                        subtitle: Text(
+                          item['subtitle'],
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 13,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -482,8 +492,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           label,
           style: TextStyle(
             color: isSelected ? Colors.black : Colors.white,
-            fontWeight:
-                isSelected ? FontWeight.bold : FontWeight.normal,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
         ),
