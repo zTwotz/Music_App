@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/services/artist_service.dart';
+import '../artist/artist_songs_screen.dart';
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../../shared/models/song.dart';
+import '../../shared/models/artist.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../catalog/podcast_catalog_provider.dart';
@@ -34,6 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _searchFocusNode = FocusNode();
 
   List<Song> _filteredSongs = [];
+  List<Artist> _filteredArtists = [];
   bool _isSearching = false;
 
   final List<String> exploreTags = [
@@ -115,12 +119,13 @@ class _SearchScreenState extends State<SearchScreen> {
     return result;
   }
 
-  void _onSearchChanged() {
+  void _onSearchChanged() async {
     final rawQuery = _searchController.text.trim();
     if (rawQuery.isEmpty) {
       setState(() {
         _isSearching = false;
         _filteredSongs = [];
+        _filteredArtists = [];
       });
       return;
     }
@@ -128,8 +133,14 @@ class _SearchScreenState extends State<SearchScreen> {
     final query = _normalize(rawQuery);
     final combined = [...widget.songs, ...widget.podcasts];
 
+    // Priority search for artists
+    final artists = await ArtistService().searchArtists(rawQuery);
+
+    if (!mounted) return;
+
     setState(() {
       _isSearching = true;
+      _filteredArtists = artists;
       _filteredSongs = combined.where((item) {
         final titleNorm = _normalize(item.title);
         final artistNorm = _normalize(item.artist);
@@ -152,6 +163,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     setState(() {
       _isSearching = true;
+      _filteredArtists = [];
       _filteredSongs = randomContent.take(15).toList();
     });
   }
@@ -410,7 +422,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (_filteredSongs.isEmpty)
+                  if (_filteredArtists.isNotEmpty) ...[
+                    ..._filteredArtists.map((artist) => _buildArtistItem(artist)),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_filteredSongs.isEmpty && _filteredArtists.isEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 40),
                       child: Center(
@@ -488,6 +504,47 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildArtistItem(Artist artist) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArtistSongsScreen(
+              artistName: artist.name,
+              avatarUrl: artist.avatarUrl,
+              controller: widget.controller,
+              songs: widget.songs,
+            ),
+          ),
+        );
+      },
+      leading: CircleAvatar(
+        radius: 26,
+        backgroundColor: Colors.white10,
+        backgroundImage: (artist.avatarUrl != null && artist.avatarUrl!.isNotEmpty)
+            ? NetworkImage(artist.avatarUrl!)
+            : null,
+        child: (artist.avatarUrl == null || artist.avatarUrl!.isEmpty)
+            ? const Icon(Icons.person, color: Colors.white54)
+            : null,
+      ),
+      title: Text(
+        artist.name,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      subtitle: const Text(
+        'Nghệ sĩ',
+        style: TextStyle(color: Colors.white70, fontSize: 13),
+      ),
     );
   }
 

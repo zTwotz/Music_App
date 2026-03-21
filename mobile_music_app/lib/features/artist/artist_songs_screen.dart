@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/services/artist_service.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
@@ -10,12 +11,14 @@ import '../player/full_player_screen.dart';
 
 class ArtistSongsScreen extends StatefulWidget {
   final String artistName;
+  final String? avatarUrl;
   final AudioPlayerController controller;
   final List<Song> songs;
 
   const ArtistSongsScreen({
     super.key,
     required this.artistName,
+    this.avatarUrl,
     required this.controller,
     List<Song>? songs,
   }) : songs = songs ?? demoSongs;
@@ -26,6 +29,7 @@ class ArtistSongsScreen extends StatefulWidget {
 
 class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
   late List<Song> artistSongs;
+  String? _fetchedAvatarUrl;
   final ScrollController _scrollController = ScrollController();
   double _opacity = 0;
 
@@ -33,6 +37,7 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
   void initState() {
     super.initState();
     _findArtistSongs();
+    _fetchArtistAvatar();
     _scrollController.addListener(() {
       final offset = _scrollController.offset;
       final newOpacity = (offset / 150).clamp(0.0, 1.0);
@@ -40,6 +45,21 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
         setState(() => _opacity = newOpacity);
       }
     });
+  }
+
+  Future<void> _fetchArtistAvatar() async {
+    if (widget.avatarUrl != null) return;
+
+    final artists = await ArtistService().searchArtists(widget.artistName);
+    if (artists.isNotEmpty && mounted) {
+      final match = artists.firstWhere(
+        (a) => a.name.toLowerCase() == widget.artistName.toLowerCase(),
+        orElse: () => artists.first,
+      );
+      setState(() {
+        _fetchedAvatarUrl = match.avatarUrl;
+      });
+    }
   }
 
   void _findArtistSongs() {
@@ -75,12 +95,8 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String? artistImage;
-    if (widget.artistName == 'Sơn Tùng MTP' || widget.artistName == 'Sơn Tùng M-TP') {
-      artistImage = 'assets/covers_demo/sontung_profile.jpg';
-    } else if (widget.artistName == 'The Weeknd') {
-      artistImage = 'assets/covers_demo/theweeknd_profile.jpg';
-    } else {
+    String? artistImage = widget.avatarUrl ?? _fetchedAvatarUrl;
+    if (artistImage == null || artistImage.isEmpty) {
       try {
         final song = artistSongs.first;
         artistImage = song.coverAsset ?? song.coverUrl;

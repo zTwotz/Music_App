@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
+import '../../shared/models/artist.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
+import '../catalog/song_catalog_provider.dart';
+import 'package:provider/provider.dart';
 import '../podcast/channel_screen.dart';
 import 'lyrics_screen.dart';
 
@@ -110,11 +113,16 @@ class FullPlayerScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: _buildArtistLinks(context, song),
-                                ),
+                              Consumer<SongCatalogProvider>(
+                                builder: (context, catalog, _) {
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      children: _buildArtistLinks(
+                                          context, song, catalog.artists),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -227,7 +235,8 @@ class FullPlayerScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildArtistLinks(BuildContext context, Song song) {
+  List<Widget> _buildArtistLinks(
+      BuildContext context, Song song, List<Artist> artists) {
     final artistStr = song.artist;
     final normalized = artistStr.replaceAll(
       RegExp(
@@ -237,51 +246,65 @@ class FullPlayerScreen extends StatelessWidget {
       '|||',
     );
 
-    final names = normalized.split('|||').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+            final names = normalized
+                .split('|||')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
 
-    List<Widget> links = [];
-    for (int i = 0; i < names.length; i++) {
-      links.add(
-        GestureDetector(
-          onTap: () {
-            if (song is Podcast && song.channelId != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChannelScreen(
-                    channelId: song.channelId!,
-                    channelName: song.channelName ?? song.artist,
-                    avatarUrl: song.channelAvatarUrl,
-                    initialSubscribers: song.subscriberCount,
-                    controller: controller,
-                    allSongs: allSongs,
+            List<Widget> links = [];
+            final catalogArtists = artists;
+
+            for (int i = 0; i < names.length; i++) {
+              final artistName = names[i];
+              // Try to find the artist in catalog to get avatar
+              final match = catalogArtists.firstWhere(
+                (a) => a.name.toLowerCase() == artistName.toLowerCase(),
+                orElse: () => Artist(id: '', name: artistName),
+              );
+
+              links.add(
+                GestureDetector(
+                  onTap: () {
+                    if (song is Podcast && song.channelId != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChannelScreen(
+                            channelId: song.channelId!,
+                            channelName: song.channelName ?? song.artist,
+                            avatarUrl: song.channelAvatarUrl,
+                            initialSubscribers: song.subscriberCount,
+                            controller: controller,
+                            allSongs: allSongs,
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ArtistSongsScreen(
+                          artistName: artistName,
+                          avatarUrl: match.avatarUrl,
+                          controller: controller,
+                          songs: allSongs,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    artistName,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      color: Colors.white70,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white38,
+                    ),
                   ),
                 ),
               );
-              return;
-            }
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ArtistSongsScreen(
-                  artistName: names[i],
-                  controller: controller,
-                  songs: allSongs,
-                ),
-              ),
-            );
-          },
-          child: Text(
-            names[i],
-            style: const TextStyle(
-              fontSize: 17,
-              color: Colors.white70,
-              decoration: TextDecoration.underline,
-              decorationColor: Colors.white38,
-            ),
-          ),
-        ),
-      );
 
       if (i < names.length - 1) {
         links.add(
