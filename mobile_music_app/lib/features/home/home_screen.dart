@@ -8,6 +8,7 @@ import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
+import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../library/favorite_songs_screen.dart';
 import '../player/full_player_screen.dart';
@@ -15,11 +16,13 @@ import '../playlist/playlist_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
+  final List<Podcast> podcasts;
   final AudioPlayerController controller;
 
   const HomeScreen({
     super.key,
     required this.songs,
+    required this.podcasts,
     required this.controller,
   });
 
@@ -167,20 +170,23 @@ class HomeScreenState extends State<HomeScreen> {
         },
       },
       {
-        'title': 'The Weeknd',
-        'isNetwork': false,
-        'image': 'assets/covers_demo/theweeknd_profile.jpg',
+        'title': 'Giai hiệu đề xuất',
+        ...getRandomCoverInfo(),
         'onTap': () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ArtistSongsScreen(
-                artistName: 'The Weeknd',
-                controller: widget.controller,
-                songs: widget.songs,
+          final songs = getRandomSongs(12);
+          if (songs.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PlaylistDetailScreen(
+                  title: 'Giai hiệu đề xuất',
+                  songs: songs,
+                  controller: widget.controller,
+                  allSongs: widget.songs,
+                ),
               ),
-            ),
-          );
+            );
+          }
         },
       },
       {
@@ -230,7 +236,10 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: () => context.read<SongCatalogProvider>().refreshSongs(),
+        onRefresh: () async {
+          await context.read<SongCatalogProvider>().refreshSongs();
+          await context.read<PodcastCatalogProvider>().refreshPodcasts();
+        },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
@@ -337,6 +346,35 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+            ] else if (_selectedFilter.startsWith('Podcasts')) ...[
+              const Text(
+                'Chương trình Podcasts dành cho bạn',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              if (_selectedFilter == 'Podcasts - Đang theo dõi') ...[
+                ...widget.podcasts.where((p) {
+                  return widget.controller.followedArtistNames.any(
+                    (f) => p.artist.toLowerCase().contains(f.toLowerCase()),
+                  );
+                }).map((p) => _buildSongItem(p)),
+                if (widget.podcasts.where((p) {
+                  return widget.controller.followedArtistNames.any(
+                    (f) => p.artist.toLowerCase().contains(f.toLowerCase()),
+                  );
+                }).isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text(
+                        'Bạn chưa theo dõi podcast nào.',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ),
+                  ),
+              ] else ...[
+                ...widget.podcasts.map((p) => _buildSongItem(p)),
+              ],
             ] else ...[
               const Text(
                 'Nghe gần đây',

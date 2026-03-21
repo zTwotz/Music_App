@@ -6,18 +6,22 @@ import 'package:provider/provider.dart';
 import '../../core/audio/audio_player_controller.dart';
 import '../../shared/models/song.dart';
 import '../artist/artist_songs_screen.dart';
+import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../playlist/playlist_detail_screen.dart';
+import '../player/full_player_screen.dart';
 import 'favorite_songs_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   final AudioPlayerController controller;
   final List<Song> songs;
+  final List<Podcast> podcasts;
 
   const LibraryScreen({
     super.key,
     required this.controller,
     required this.songs,
+    required this.podcasts,
   });
 
   @override
@@ -187,21 +191,14 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ...playlists,
           ...sortedArtists.map((name) {
             String? artistImage;
-
-            if (name == 'Sơn Tùng MTP' || name == 'Sơn Tùng M-TP') {
-              artistImage = 'assets/covers_demo/sontung_profile.jpg';
-            } else if (name == 'The Weeknd') {
-              artistImage = 'assets/covers_demo/theweeknd_profile.jpg';
-            } else {
-              try {
-                final song = widget.songs.firstWhere((s) {
-                  final individual = _extractIndividualArtists(s.artist);
-                  return individual.contains(name);
-                });
-                artistImage = _getSongDisplayImage(song);
-              } catch (_) {
-                artistImage = null;
-              }
+            try {
+              final song = widget.songs.firstWhere((s) {
+                final individual = _extractIndividualArtists(s.artist);
+                return individual.contains(name);
+              });
+              artistImage = _getSongDisplayImage(song);
+            } catch (_) {
+              artistImage = null;
             }
 
             return {
@@ -213,6 +210,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
               'isNetwork': _isNetworkImage(artistImage),
             };
           }),
+          ...widget.podcasts.map((p) {
+            final cover = p.coverAsset ?? p.coverUrl;
+            return {
+              'id': p.id,
+              'title': p.title,
+              'subtitle': 'Podcast • ${p.artist}',
+              'type': 'Podcast',
+              'image': cover,
+              'isNetwork': _isNetworkImage(cover),
+              'podcast': p,
+            };
+          }),
         ];
 
         var filteredItems = allItems;
@@ -222,6 +231,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
         } else if (_activeFilter == 'Nghệ sĩ') {
           filteredItems =
               allItems.where((item) => item['type'] == 'Artist').toList();
+        } else if (_activeFilter == 'Podcasts') {
+          filteredItems =
+              allItems.where((item) => item['type'] == 'Podcast').toList();
         }
 
         if (_isSearching && _searchController.text.isNotEmpty) {
@@ -305,6 +317,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       _buildFilterChip('Danh sách phát'),
                       const SizedBox(width: 8),
                       _buildFilterChip('Nghệ sĩ'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Podcasts'),
                     ],
                   ),
                 ),
@@ -329,8 +343,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               ),
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () =>
-                      context.read<SongCatalogProvider>().refreshSongs(),
+                  onRefresh: () async {
+                    await context.read<SongCatalogProvider>().refreshSongs();
+                    await context.read<PodcastCatalogProvider>().refreshPodcasts();
+                  },
                   child: ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
@@ -353,6 +369,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 builder: (_) => FavoriteSongsScreen(
                                   controller: widget.controller,
                                   songs: widget.songs,
+                                ),
+                              ),
+                            );
+                          } else if (item['type'] == 'Podcast') {
+                            final podcast = item['podcast'] as Podcast;
+                            widget.controller.selectSong(podcast, queue: widget.podcasts);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => FullPlayerScreen(
+                                  controller: widget.controller,
+                                  allSongs: widget.songs,
                                 ),
                               ),
                             );

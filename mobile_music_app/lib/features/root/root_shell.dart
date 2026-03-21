@@ -6,6 +6,7 @@ import '../../shared/models/song.dart';
 import '../../shared/widgets/create_bottom_sheet.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../auth/auth_provider.dart';
+import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
@@ -80,8 +81,10 @@ class _RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final catalog = context.watch<SongCatalogProvider>();
+    final podcastCatalog = context.watch<PodcastCatalogProvider>();
 
     final songs = catalog.allSongs;
+    final podcasts = podcastCatalog.allPodcasts;
 
     final displayName = auth.displayName;
     final email = auth.email;
@@ -92,15 +95,18 @@ class _RootShellState extends State<RootShell> {
       HomeScreen(
         key: _homeKey,
         songs: songs,
+        podcasts: podcasts,
         controller: _audioController,
       ),
       SearchScreen(
         controller: _audioController,
         songs: songs,
+        podcasts: podcasts,
       ),
       LibraryScreen(
         controller: _audioController,
         songs: songs,
+        podcasts: podcasts,
       ),
     ];
 

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/services/song_service.dart';
-import '../../shared/data/demo_songs.dart';
+import '../../core/services/song_service.dart';
 import '../../shared/models/song.dart';
 
 class SongCatalogProvider extends ChangeNotifier {
@@ -18,9 +18,8 @@ class SongCatalogProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  List<Song> get localSongs => demoSongs;
   List<Song> get cloudSongs => _cloudSongs;
-  List<Song> get allSongs => [...demoSongs, ..._cloudSongs];
+  List<Song> get allSongs => _cloudSongs;
 
   Future<void> loadSongs() async {
     _isLoading = true;

@@ -19,7 +19,7 @@ class AudioPlayerController extends ChangeNotifier {
   bool _isLoading = false;
   List<LyricLine> _lyrics = [];
 
-  List<Song> _currentQueue = demoSongs;
+  List<Song> _currentQueue = [];
   final List<String> _history = [];
 
   bool _isShuffleActive = false;
@@ -27,17 +27,7 @@ class AudioPlayerController extends ChangeNotifier {
   final Set<String> _favoriteSongIds = {};
   final Set<String> _followedArtistNames = {};
 
-  final Map<String, List<String>> _playlists = {
-    'Nhạc chill đêm': ['song_19', 'song_18', 'song_23'],
-    'Top bài hát năm 2025': ['song_26', 'song_11', 'song_15'],
-    'V-Pop Hits': ['song_01', 'song_02', 'song_07', 'song_09', 'song_48'],
-    'Global Top 50': ['song_10', 'song_20', 'song_21', 'song_32', 'song_33'],
-    'Giai điệu lofi': ['song_22', 'song_23', 'song_24', 'song_50'],
-    'Rap Việt đỉnh cao': ['song_03', 'song_04', 'song_14', 'song_36', 'song_45'],
-    'HIEUTHUHAI Collection': ['song_13', 'song_46'],
-    'Sơn Tùng M-TP Hits': ['song_06', 'song_07', 'song_08', 'song_38'],
-    'The Weeknd Essentials': ['song_10', 'song_11', 'song_12'],
-  };
+  final Map<String, List<String>> _playlists = {};
 
   AudioPlayerController() {
     _player.playerStateStream.listen((state) {
@@ -343,9 +333,6 @@ class AudioPlayerController extends ChangeNotifier {
       if (song.id == id) return song;
     }
 
-    for (final song in demoSongs) {
-      if (song.id == id) return song;
-    }
 
     if (_currentSong?.id == id) {
       return _currentSong;

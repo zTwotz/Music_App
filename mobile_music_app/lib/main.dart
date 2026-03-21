@@ -7,7 +7,9 @@ import 'core/services/auth_service.dart';
 import 'core/services/song_service.dart';
 import 'core/services/supabase_config.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/catalog/podcast_catalog_provider.dart';
 import 'features/catalog/song_catalog_provider.dart';
+import 'core/services/podcast_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +31,11 @@ Future<void> main() async {
           create: (_) => SongCatalogProvider(
             songService: SongService(),
           )..loadSongs(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PodcastCatalogProvider(
+            podcastService: PodcastService(),
+          )..loadPodcasts(),
         ),
       ],
       child: const MyApp(),

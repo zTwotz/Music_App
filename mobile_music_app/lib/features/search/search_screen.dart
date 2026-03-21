@@ -7,17 +7,20 @@ import '../../core/audio/audio_player_controller.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
+import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../player/full_player_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final AudioPlayerController controller;
   final List<Song> songs;
+  final List<Podcast> podcasts;
 
   const SearchScreen({
     super.key,
     required this.controller,
     required this.songs,
+    required this.podcasts,
   });
 
   @override
@@ -68,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     browseItems = [
       {'title': 'Nhạc', 'song': songs[random.nextInt(songs.length)]},
-      {'title': 'Podcasts', 'song': songs[random.nextInt(songs.length)]},
+      {'title': 'Podcasts', 'song': widget.podcasts.isNotEmpty ? widget.podcasts[random.nextInt(widget.podcasts.length)] : songs[random.nextInt(songs.length)]},
       {'title': 'Sự kiện trực tiếp', 'song': songs[random.nextInt(songs.length)]},
       {'title': 'Dành cho bạn', 'song': songs[random.nextInt(songs.length)]},
       {'title': 'Bản phát hành mới', 'song': songs[random.nextInt(songs.length)]},
@@ -93,11 +96,12 @@ class _SearchScreenState extends State<SearchScreen> {
         _filteredSongs = [];
       });
     } else {
+      final combined = [...widget.songs, ...widget.podcasts];
       setState(() {
         _isSearching = true;
-        _filteredSongs = widget.songs.where((song) {
-          return song.title.toLowerCase().contains(query) ||
-              song.artist.toLowerCase().contains(query);
+        _filteredSongs = combined.where((item) {
+          return item.title.toLowerCase().contains(query) ||
+              item.artist.toLowerCase().contains(query);
         }).toList();
       });
     }
@@ -111,11 +115,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _showRandomSongs() {
     final random = Random();
-    final randomSongs = List<Song>.from(widget.songs)..shuffle(random);
+    final combined = [...widget.songs, ...widget.podcasts];
+    final randomContent = List<Song>.from(combined)..shuffle(random);
 
     setState(() {
       _isSearching = true;
-      _filteredSongs = randomSongs.take(15).toList();
+      _filteredSongs = randomContent.take(15).toList();
     });
   }
 
@@ -126,7 +131,10 @@ class _SearchScreenState extends State<SearchScreen> {
       builder: (context, _) {
         return SafeArea(
           child: RefreshIndicator(
-            onRefresh: () => context.read<SongCatalogProvider>().refreshSongs(),
+            onRefresh: () async {
+              await context.read<SongCatalogProvider>().refreshSongs();
+              await context.read<PodcastCatalogProvider>().refreshPodcasts();
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),

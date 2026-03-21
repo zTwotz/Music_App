@@ -97,3 +97,65 @@ class Song {
     );
   }
 }
+
+class Podcast extends Song {
+  final String? avatar;
+
+  const Podcast({
+    required super.id,
+    required super.title,
+    required super.artist,
+    this.avatar,
+    required super.color,
+    super.audioAsset,
+    super.audioUrl,
+    super.coverAsset,
+    super.coverUrl,
+    super.lyricsAsset,
+    super.lyricsUrl,
+    super.isAsset,
+    super.isCloud,
+  });
+
+  const Podcast.local({
+    required String id,
+    required String title,
+    required String artist,
+    required String avatar,
+    required String audioAsset,
+    required String coverAsset,
+    required String lyricsAsset,
+    required Color color,
+  }) : this(
+          id: id,
+          title: title,
+          artist: artist,
+          avatar: avatar,
+          color: color,
+          audioAsset: audioAsset,
+          coverAsset: coverAsset,
+          lyricsAsset: lyricsAsset,
+          isAsset: true,
+        );
+
+  const Podcast.cloud({
+    required String id,
+    required String title,
+    required String artist,
+    String? avatar,
+    required String audioUrl,
+    String? coverUrl,
+    String? lyricsUrl,
+    required Color color,
+  }) : this(
+          id: id,
+          title: title,
+          artist: artist,
+          avatar: avatar,
+          color: color,
+          audioUrl: audioUrl,
+          coverUrl: coverUrl,
+          lyricsUrl: lyricsUrl,
+          isCloud: true,
+        );
+}
