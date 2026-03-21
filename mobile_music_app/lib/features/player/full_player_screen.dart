@@ -4,6 +4,7 @@ import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
+import '../podcast/channel_screen.dart';
 import 'lyrics_screen.dart';
 
 class FullPlayerScreen extends StatelessWidget {
@@ -112,7 +113,7 @@ class FullPlayerScreen extends StatelessWidget {
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
-                                  children: _buildArtistLinks(context, song.artist),
+                                  children: _buildArtistLinks(context, song),
                                 ),
                               ),
                             ],
@@ -226,7 +227,8 @@ class FullPlayerScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildArtistLinks(BuildContext context, String artistStr) {
+  List<Widget> _buildArtistLinks(BuildContext context, Song song) {
+    final artistStr = song.artist;
     final normalized = artistStr.replaceAll(
       RegExp(
         r'\s+(ft\.?|feat\.?|x|&|-)\s+|,\s*',
@@ -242,6 +244,22 @@ class FullPlayerScreen extends StatelessWidget {
       links.add(
         GestureDetector(
           onTap: () {
+            if (song is Podcast && song.channelId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChannelScreen(
+                    channelId: song.channelId!,
+                    channelName: song.channelName ?? song.artist,
+                    avatarUrl: song.channelAvatarUrl,
+                    initialSubscribers: song.subscriberCount,
+                    controller: controller,
+                    allSongs: allSongs,
+                  ),
+                ),
+              );
+              return;
+            }
             Navigator.push(
               context,
               MaterialPageRoute(

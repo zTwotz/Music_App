@@ -99,13 +99,23 @@ class Song {
 }
 
 class Podcast extends Song {
-  final String? avatar;
+  final String? avatar; // Legacy field, keeping for compatibility if needed elsewhere
+  final String? channelId;
+  final String? channelName;
+  final String? channelAvatarUrl;
+  final int subscriberCount;
+  final int listenCount;
 
   const Podcast({
     required super.id,
     required super.title,
     required super.artist,
     this.avatar,
+    this.channelId,
+    this.channelName,
+    this.channelAvatarUrl,
+    this.subscriberCount = 0,
+    this.listenCount = 0,
     required super.color,
     super.audioAsset,
     super.audioUrl,
@@ -131,6 +141,8 @@ class Podcast extends Song {
           title: title,
           artist: artist,
           avatar: avatar,
+          channelName: artist,
+          channelAvatarUrl: avatar,
           color: color,
           audioAsset: audioAsset,
           coverAsset: coverAsset,
@@ -142,7 +154,11 @@ class Podcast extends Song {
     required String id,
     required String title,
     required String artist,
-    String? avatar,
+    String? channelId,
+    String? channelName,
+    String? channelAvatarUrl,
+    int subscriberCount = 0,
+    int listenCount = 0,
     required String audioUrl,
     String? coverUrl,
     String? lyricsUrl,
@@ -151,7 +167,11 @@ class Podcast extends Song {
           id: id,
           title: title,
           artist: artist,
-          avatar: avatar,
+          channelId: channelId,
+          channelName: channelName ?? artist,
+          channelAvatarUrl: channelAvatarUrl,
+          subscriberCount: subscriberCount,
+          listenCount: listenCount,
           color: color,
           audioUrl: audioUrl,
           coverUrl: coverUrl,

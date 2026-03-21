@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../auth/auth_provider.dart';
+import '../auth/login_screen.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
@@ -87,24 +89,54 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
+  String _normalize(String str) {
+    const accents =
+        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ';
+    const noAccents =
+        'aaaaaaaaaaaaeeseiaaaaaaaaeeeeeeeeeeiiiiiooooooooooooooouuuuuuuuuuyyyyyd';
 
-    if (query.isEmpty) {
+    String result = str.toLowerCase();
+    for (int i = 0; i < accents.length; i++) {
+      result = result.replaceAll(accents[i], noAccents[i]);
+    }
+    // Remove all non-alphanumeric characters and collapse double letters (greedy normalization)
+    result = result.replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+    // Common Vietnamese Telex double keys: aa->a, ee->e, oo->o, dd->d, uw->u
+    result = result
+        .replaceAll('aa', 'a')
+        .replaceAll('ee', 'e')
+        .replaceAll('oo', 'o')
+        .replaceAll('dd', 'd')
+        .replaceAll('uu', 'u')
+        .replaceAll('ww', 'w')
+        .replaceAll('uw', 'u');
+
+    return result;
+  }
+
+  void _onSearchChanged() {
+    final rawQuery = _searchController.text.trim();
+    if (rawQuery.isEmpty) {
       setState(() {
         _isSearching = false;
         _filteredSongs = [];
       });
-    } else {
-      final combined = [...widget.songs, ...widget.podcasts];
-      setState(() {
-        _isSearching = true;
-        _filteredSongs = combined.where((item) {
-          return item.title.toLowerCase().contains(query) ||
-              item.artist.toLowerCase().contains(query);
-        }).toList();
-      });
+      return;
     }
+
+    final query = _normalize(rawQuery);
+    final combined = [...widget.songs, ...widget.podcasts];
+
+    setState(() {
+      _isSearching = true;
+      _filteredSongs = combined.where((item) {
+        final titleNorm = _normalize(item.title);
+        final artistNorm = _normalize(item.artist);
+
+        return titleNorm.contains(query) || artistNorm.contains(query);
+      }).toList();
+    });
   }
 
   void _handleTagSelection(String tag) {
@@ -141,22 +173,44 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Row(
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                      child: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFFF3759F),
-                        child: Text(
-                          'T',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
+                    Consumer<AuthProvider>(
+                      builder: (context, auth, _) {
+                        final isLoggedIn = auth.isLoggedIn;
+                        final name = auth.displayName;
+                        final firstLetter =
+                            name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+                        return GestureDetector(
+                          onTap: () {
+                            if (!isLoggedIn) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const LoginScreen()),
+                              );
+                            } else {
+                              Scaffold.of(context).openDrawer();
+                            }
+                          },
+                          child: CircleAvatar(
+                            radius: 18,
+                            backgroundColor: isLoggedIn
+                                ? const Color(0xFFF3759F)
+                                : Colors.white10,
+                            child: isLoggedIn
+                                ? Text(
+                                    firstLetter,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                    ),
+                                  )
+                                : const Icon(Icons.person,
+                                    size: 18, color: Colors.white70),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                     const SizedBox(width: 12),
                     const Text(

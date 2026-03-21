@@ -1,18 +1,23 @@
 import 'dart:math';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/services/podcast_service.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../artist/artist_songs_screen.dart';
+import '../auth/auth_provider.dart';
+import '../auth/login_screen.dart';
 import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../library/favorite_songs_screen.dart';
 import '../player/full_player_screen.dart';
 import '../playlist/playlist_detail_screen.dart';
+import '../podcast/channel_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
@@ -36,6 +41,11 @@ class HomeScreenState extends State<HomeScreen> {
   late List<Map<String, dynamic>> recentItems;
   late List<Map<String, dynamic>> dailyMixes;
 
+  List<Song> _shuffledSongs = [];
+  List<Podcast> _shuffledPodcasts = [];
+  bool _isAllSongsExpanded = false;
+  bool _isAllPodcastsExpanded = false;
+
   void resetFilter() {
     if (!mounted) return;
     if (_selectedFilter != 'Tất cả') {
@@ -54,13 +64,15 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void didUpdateWidget(covariant HomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.songs != widget.songs) {
+    if (oldWidget.songs != widget.songs || oldWidget.podcasts != widget.podcasts) {
       _initializeData();
     }
   }
 
   void _initializeData() {
     final random = Random();
+    _shuffledSongs = List<Song>.from(widget.songs)..shuffle(random);
+    _shuffledPodcasts = List<Podcast>.from(widget.podcasts)..shuffle(random);
 
     List<Song> getRandomSongs(int count) {
       if (widget.songs.isEmpty) return [];
@@ -248,22 +260,41 @@ class HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Scaffold.of(context).openDrawer();
-                    },
-                    child: const CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Color(0xFFF3759F),
-                      child: Text(
-                        'T',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      final isLoggedIn = auth.isLoggedIn;
+                      final name = auth.displayName;
+                      final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
+                      return GestureDetector(
+                        onTap: () {
+                          if (!isLoggedIn) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            );
+                          } else {
+                            Scaffold.of(context).openDrawer();
+                          }
+                        },
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundColor:
+                              isLoggedIn ? const Color(0xFFF3759F) : Colors.white10,
+                          child: isLoggedIn
+                              ? Text(
+                                  firstLetter,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                  ),
+                                )
+                              : const Icon(Icons.person,
+                                  size: 18, color: Colors.white70),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 12),
                   _buildTopChip(
@@ -357,7 +388,7 @@ class HomeScreenState extends State<HomeScreen> {
                   return widget.controller.followedArtistNames.any(
                     (f) => p.artist.toLowerCase().contains(f.toLowerCase()),
                   );
-                }).map((p) => _buildSongItem(p)),
+                }).map((p) => _buildPodcastYoutubeItem(p)),
                 if (widget.podcasts.where((p) {
                   return widget.controller.followedArtistNames.any(
                     (f) => p.artist.toLowerCase().contains(f.toLowerCase()),
@@ -373,14 +404,15 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
               ] else ...[
-                ...widget.podcasts.map((p) => _buildSongItem(p)),
+                ...widget.podcasts.map((p) => _buildPodcastYoutubeItem(p)),
               ],
             ] else ...[
-              const Text(
-                'Nghe gần đây',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-            const SizedBox(height: 12),
+              if (context.watch<AuthProvider>().isLoggedIn) ...[
+                const Text(
+                  'Nghe gần đây',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
             GridView.builder(
               itemCount: recentItems.length,
               shrinkWrap: true,
@@ -470,8 +502,9 @@ class HomeScreenState extends State<HomeScreen> {
               },
             ),
             const SizedBox(height: 28),
-            const Text(
-              'Khơi nguồn cảm hứng',
+          ],
+          const Text(
+            'Khơi nguồn cảm hứng',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -551,11 +584,197 @@ class HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            ...widget.songs.map((song) => _buildSongItem(song)),
+            ...(_isAllSongsExpanded
+                    ? _shuffledSongs
+                    : _shuffledSongs.take(10))
+                .map((song) => _buildSongItem(song)),
+            if (_shuffledSongs.length > 10)
+              Center(
+                child: TextButton(
+                  onPressed: () =>
+                      setState(() => _isAllSongsExpanded = !_isAllSongsExpanded),
+                  child: Text(
+                    _isAllSongsExpanded ? 'Thu gọn' : 'Hiển thị thêm',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 28),
+            const Text(
+              'Chương trình Podcasts dành cho bạn',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...(_isAllPodcastsExpanded
+                    ? _shuffledPodcasts
+                    : _shuffledPodcasts.take(5))
+                .map((p) => _buildPodcastYoutubeItem(p)),
+            if (_shuffledPodcasts.length > 5)
+              Center(
+                child: TextButton(
+                  onPressed: () => setState(
+                      () => _isAllPodcastsExpanded = !_isAllPodcastsExpanded),
+                  child: Text(
+                    _isAllPodcastsExpanded ? 'Thu gọn' : 'Hiển thị thêm',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPodcastYoutubeItem(Podcast podcast) {
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) {
+        final isCurrentItem = widget.controller.currentSong?.id == podcast.id;
+
+        return Column(
+          children: [
+            GestureDetector(
+              onTap: () async {
+                await PodcastService().recordListen(podcast.id);
+                widget.controller.selectSong(podcast, queue: widget.podcasts);
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FullPlayerScreen(
+                        controller: widget.controller,
+                        allSongs: widget.songs,
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildSongCover(podcast),
+                        if (isCurrentItem)
+                          Container(
+                            color: Colors.black45,
+                            child: Center(
+                              child: AnimatedEqualizer(
+                                isPlaying: widget.controller.isPlaying,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (podcast.channelId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChannelScreen(
+                              channelId: podcast.channelId!,
+                              channelName: podcast.channelName ?? podcast.artist,
+                              avatarUrl: podcast.channelAvatarUrl,
+                              initialSubscribers: podcast.subscriberCount,
+                              controller: widget.controller,
+                              allSongs: widget.songs,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white10,
+                      backgroundImage: (podcast.channelAvatarUrl != null &&
+                              podcast.channelAvatarUrl!.isNotEmpty)
+                          ? NetworkImage(podcast.channelAvatarUrl!)
+                          : null,
+                      child: (podcast.channelAvatarUrl == null ||
+                              podcast.channelAvatarUrl!.isEmpty)
+                          ? const Icon(Icons.person, color: Colors.white70)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          podcast.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () {
+                            if (podcast.channelId != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ChannelScreen(
+                                    channelId: podcast.channelId!,
+                                    channelName: podcast.channelName ?? podcast.artist,
+                                    avatarUrl: podcast.channelAvatarUrl,
+                                    initialSubscribers: podcast.subscriberCount,
+                                    controller: widget.controller,
+                                    allSongs: widget.songs,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Text(
+                            '${podcast.artist} • ${podcast.subscriberCount} Subs • ${podcast.listenCount} Lượt nghe',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => showSongOptionsBottomSheet(
+                      context,
+                      song: podcast,
+                      controller: widget.controller,
+                      allSongs: widget.songs,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
     );
   }
 

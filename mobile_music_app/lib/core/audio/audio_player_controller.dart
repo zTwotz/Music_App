@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 
+import '../../core/services/podcast_service.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/lyric_line.dart';
 import '../../shared/models/song.dart';
@@ -98,6 +99,9 @@ class AudioPlayerController extends ChangeNotifier {
       _currentSong = song;
 
       if (isNewSong) {
+        if (song is Podcast) {
+          PodcastService().recordListen(song.id);
+        }
         _position = Duration.zero;
         _duration = Duration.zero;
         _lyrics = [];
@@ -153,7 +157,11 @@ class AudioPlayerController extends ChangeNotifier {
     }
 
     if (audioUrl != null && audioUrl.trim().isNotEmpty) {
-      await _player.setUrl(audioUrl);
+      if (audioUrl.startsWith('assets/')) {
+        await _player.setAsset(audioUrl);
+      } else {
+        await _player.setUrl(audioUrl);
+      }
       return;
     }
 

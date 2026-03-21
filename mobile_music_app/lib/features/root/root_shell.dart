@@ -6,6 +6,7 @@ import '../../shared/models/song.dart';
 import '../../shared/widgets/create_bottom_sheet.dart';
 import '../../shared/widgets/mini_player.dart';
 import '../auth/auth_provider.dart';
+import '../auth/login_screen.dart';
 import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../home/home_screen.dart';
@@ -123,15 +124,20 @@ class _RootShellState extends State<RootShell> {
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: const Color(0xFFF3759F),
-                      child: Text(
-                        avatarLetter,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      backgroundColor: auth.isLoggedIn
+                          ? const Color(0xFFF3759F)
+                          : Colors.white10,
+                      child: auth.isLoggedIn
+                          ? Text(
+                              avatarLetter,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : const Icon(Icons.person,
+                              size: 24, color: Colors.white70),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -139,7 +145,7 @@ class _RootShellState extends State<RootShell> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            displayName,
+                            auth.isLoggedIn ? displayName : 'Chưa đăng nhập',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -230,17 +236,33 @@ class _RootShellState extends State<RootShell> {
                 ),
               const Spacer(),
               const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text(
-                  'Đăng xuất',
-                  style: TextStyle(color: Colors.redAccent),
+              if (auth.isLoggedIn)
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
+                  title: const Text(
+                    'Đăng xuất',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await context.read<AuthProvider>().signOut();
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.login, color: Colors.greenAccent),
+                  title: const Text(
+                    'Đăng nhập',
+                    style: TextStyle(color: Colors.greenAccent),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
                 ),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await context.read<AuthProvider>().signOut();
-                },
-              ),
               const SizedBox(height: 8),
             ],
           ),
