@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/utils/string_utils.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
@@ -88,7 +89,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text.trim().toLowerCase();
+    final queryNormalized = removeDiacritics(query);
 
     if (query.isEmpty) {
       setState(() {
@@ -97,14 +99,60 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     } else {
       final combined = [...widget.songs, ...widget.podcasts];
+      final queryWords = queryNormalized.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
+
       setState(() {
         _isSearching = true;
         _filteredSongs = combined.where((item) {
-          return item.title.toLowerCase().contains(query) ||
-              item.artist.toLowerCase().contains(query);
-        }).toList();
+          final titleNormalized = removeDiacritics(item.title.toLowerCase());
+          final artistNormalized = removeDiacritics(item.artist.toLowerCase());
+
+          // Check for exact substring match first (most relevant)
+          if (titleNormalized.contains(queryNormalized) ||
+              artistNormalized.contains(queryNormalized)) {
+            return true;
+          }
+
+          // Check if all words in query appear in either title or artist
+          if (queryWords.isNotEmpty) {
+            return queryWords.every((word) =>
+                titleNormalized.contains(word) ||
+                artistNormalized.contains(word));
+          }
+
+          return false;
+        }).toList()
+          ..sort((a, b) {
+            final aTitle = removeDiacritics(a.title.toLowerCase());
+            final bTitle = removeDiacritics(b.title.toLowerCase());
+            final aArtist = removeDiacritics(a.artist.toLowerCase());
+            final bArtist = removeDiacritics(b.artist.toLowerCase());
+
+            final aScore = _getMatchScore(aTitle, aArtist, queryNormalized);
+            final bScore = _getMatchScore(bTitle, bArtist, queryNormalized);
+
+            return bScore.compareTo(aScore); // Higher score first
+          });
       });
     }
+  }
+
+  int _getMatchScore(String title, String artist, String query) {
+    int score = 0;
+
+    // Direct substring match at start of title or artist (highest)
+    if (title.startsWith(query)) score += 100;
+    if (artist.startsWith(query)) score += 80;
+
+    // Direct substring match anywhere in title or artist
+    if (title.contains(query)) score += 50;
+    if (artist.contains(query)) score += 30;
+
+    // Bonus for exact field match
+    if (title == query) score += 200;
+    if (artist == query) score += 150;
+
+    return score;
   }
 
   void _handleTagSelection(String tag) {
@@ -337,8 +385,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Kết quả tìm kiếm',
-                        style: TextStyle(
+                        'Gợi ý cho bạn',
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
