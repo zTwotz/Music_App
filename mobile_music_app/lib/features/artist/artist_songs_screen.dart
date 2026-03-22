@@ -311,15 +311,18 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
 
                           return InkWell(
                             onTap: () {
-                              widget.controller.selectSong(
-                                song,
-                                queue: artistSongs,
-                              );
-                              pushFullPlayer(
-                                context,
-                                controller: widget.controller,
-                                allSongs: widget.songs,
-                              );
+                              if (isCurrentSong) {
+                                pushFullPlayer(
+                                  context,
+                                  controller: widget.controller,
+                                  allSongs: widget.songs,
+                                );
+                              } else {
+                                widget.controller.selectSong(
+                                  song,
+                                  queue: artistSongs,
+                                );
+                              }
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(

@@ -436,13 +436,16 @@ class _SearchScreenState extends State<SearchScreen> {
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         onTap: () {
-                          widget.controller
-                              .selectSong(song, queue: _filteredSongs);
-                          pushFullPlayer(
-                            context,
-                            controller: widget.controller,
-                            allSongs: widget.songs,
-                          );
+                          if (isCurrentSong) {
+                            pushFullPlayer(
+                              context,
+                              controller: widget.controller,
+                              allSongs: widget.songs,
+                            );
+                          } else {
+                            widget.controller
+                                .selectSong(song, queue: _filteredSongs);
+                          }
                         },
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),

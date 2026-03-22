@@ -92,12 +92,15 @@ class PlaylistDetailScreen extends StatelessWidget {
                         ],
                       ),
                       onTap: () {
-                        controller.selectSong(song, queue: songs);
-                        pushFullPlayer(
-                          context,
-                          controller: controller,
-                          allSongs: allSongs,
-                        );
+                        if (isCurrentSong) {
+                          pushFullPlayer(
+                            context,
+                            controller: controller,
+                            allSongs: allSongs,
+                          );
+                        } else {
+                          controller.selectSong(song, queue: songs);
+                        }
                       },
                     );
                   },

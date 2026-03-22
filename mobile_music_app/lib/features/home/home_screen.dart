@@ -608,13 +608,16 @@ class HomeScreenState extends State<HomeScreen> {
             GestureDetector(
               onTap: () async {
                 await PodcastService().recordListen(podcast.id);
-                widget.controller.selectSong(podcast, queue: widget.podcasts);
-                if (context.mounted) {
-                  await pushFullPlayer(
-                    context,
-                    controller: widget.controller,
-                    allSongs: widget.songs,
-                  );
+                if (isCurrentItem) {
+                  if (context.mounted) {
+                    await pushFullPlayer(
+                      context,
+                      controller: widget.controller,
+                      allSongs: widget.songs,
+                    );
+                  }
+                } else {
+                  widget.controller.selectSong(podcast, queue: widget.podcasts);
                 }
               },
               child: AspectRatio(
@@ -753,12 +756,15 @@ class HomeScreenState extends State<HomeScreen> {
         return ListTile(
           contentPadding: EdgeInsets.zero,
           onTap: () {
-            widget.controller.selectSong(song, queue: widget.songs);
-            pushFullPlayer(
-              context,
-              controller: widget.controller,
-              allSongs: widget.songs,
-            );
+            if (isCurrentSong) {
+              pushFullPlayer(
+                context,
+                controller: widget.controller,
+                allSongs: widget.songs,
+              );
+            } else {
+              widget.controller.selectSong(song, queue: widget.songs);
+            }
           },
           leading: Container(
             width: 52,

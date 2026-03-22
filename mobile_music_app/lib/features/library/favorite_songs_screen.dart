@@ -75,12 +75,15 @@ class FavoriteSongsScreen extends StatelessWidget {
                         },
                       ),
                       onTap: () {
-                        controller.selectSong(song, queue: favoriteSongs);
-                        pushFullPlayer(
-                          context,
-                          controller: controller,
-                          allSongs: songs,
-                        );
+                        if (isPlaying) {
+                          pushFullPlayer(
+                            context,
+                            controller: controller,
+                            allSongs: songs,
+                          );
+                        } else {
+                          controller.selectSong(song, queue: favoriteSongs);
+                        }
                       },
                     );
                   },

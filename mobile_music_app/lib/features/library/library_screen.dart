@@ -364,12 +364,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                             );
                           } else if (item['type'] == 'Podcast') {
                             final podcast = item['podcast'] as Podcast;
-                            widget.controller.selectSong(podcast, queue: widget.podcasts);
-                            pushFullPlayer(
-                              context,
-                              controller: widget.controller,
-                              allSongs: widget.songs,
-                            );
+                            final isCurrentItem = widget.controller.currentSong?.id == podcast.id;
+                            if (isCurrentItem) {
+                              pushFullPlayer(
+                                context,
+                                controller: widget.controller,
+                                allSongs: widget.songs,
+                              );
+                            } else {
+                              widget.controller.selectSong(podcast, queue: widget.podcasts);
+                            }
                           } else if (isArtist) {
                             Navigator.push(
                               context,

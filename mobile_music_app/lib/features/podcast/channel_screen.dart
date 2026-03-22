@@ -190,13 +190,18 @@ class _ChannelScreenState extends State<ChannelScreen> {
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       onTap: () async {
         await _podcastService.recordListen(podcast.id);
-        widget.controller.selectSong(podcast, queue: _channelPodcasts);
-        if (mounted) {
-          pushFullPlayer(
-            context,
-            controller: widget.controller,
-            allSongs: widget.allSongs,
-          );
+        final isCurrentItem = widget.controller.currentSong?.id == podcast.id;
+        
+        if (isCurrentItem) {
+          if (mounted) {
+            pushFullPlayer(
+              context,
+              controller: widget.controller,
+              allSongs: widget.allSongs,
+            );
+          }
+        } else {
+          widget.controller.selectSong(podcast, queue: _channelPodcasts);
         }
       },
       leading: ClipRRect(
