@@ -66,7 +66,7 @@ class FullPlayerScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.keyboard_arrow_down),
+                          icon: const Icon(Icons.chevron_left),
                         ),
                         const Expanded(
                           child: Text(

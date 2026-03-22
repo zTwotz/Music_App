@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
-import '../player/full_player_screen.dart';
 
 class PlaylistDetailScreen extends StatelessWidget {
   final String title;
@@ -93,14 +93,10 @@ class PlaylistDetailScreen extends StatelessWidget {
                       ),
                       onTap: () {
                         controller.selectSong(song, queue: songs);
-                        Navigator.push(
+                        pushFullPlayer(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => FullPlayerScreen(
-                              controller: controller,
-                              allSongs: allSongs,
-                            ),
-                          ),
+                          controller: controller,
+                          allSongs: allSongs,
                         );
                       },
                     );

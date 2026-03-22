@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../core/services/artist_service.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
@@ -212,14 +213,10 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                                 artistSongs.first,
                                 queue: artistSongs,
                               );
-                              Navigator.push(
+                              pushFullPlayer(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => FullPlayerScreen(
-                                    controller: widget.controller,
-                                    allSongs: widget.songs,
-                                  ),
-                                ),
+                                controller: widget.controller,
+                                allSongs: widget.songs,
                               );
                             }
                           },
@@ -239,14 +236,10 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                               shuffled.first,
                               queue: shuffled,
                             );
-                            Navigator.push(
+                            pushFullPlayer(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => FullPlayerScreen(
-                                  controller: widget.controller,
-                                  allSongs: widget.songs,
-                                ),
-                              ),
+                              controller: widget.controller,
+                              allSongs: widget.songs,
                             );
                           }
                         },
@@ -322,14 +315,10 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                                 song,
                                 queue: artistSongs,
                               );
-                              Navigator.push(
+                              pushFullPlayer(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => FullPlayerScreen(
-                                    controller: widget.controller,
-                                    allSongs: widget.songs,
-                                  ),
-                                ),
+                                controller: widget.controller,
+                                allSongs: widget.songs,
                               );
                             },
                             child: Padding(

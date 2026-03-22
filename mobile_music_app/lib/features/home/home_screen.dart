@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../core/services/podcast_service.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
@@ -15,9 +16,9 @@ import '../auth/login_screen.dart';
 import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../library/favorite_songs_screen.dart';
-import '../player/full_player_screen.dart';
 import '../playlist/playlist_detail_screen.dart';
 import '../podcast/channel_screen.dart';
+import '../../shared/widgets/user_avatar.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
@@ -260,33 +261,9 @@ class HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  Consumer<AuthProvider>(
-                    builder: (context, auth, _) {
-                      final isLoggedIn = auth.isLoggedIn;
-                      final name = auth.displayName;
-                      final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : '?';
-
-                      return GestureDetector(
-                        onTap: () {
-                          Scaffold.of(context).openDrawer();
-                        },
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor:
-                              isLoggedIn ? const Color(0xFFF3759F) : Colors.white10,
-                          child: isLoggedIn
-                              ? Text(
-                                  firstLetter,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 18,
-                                  ),
-                                )
-                              : const Icon(Icons.person,
-                                  size: 18, color: Colors.white70),
-                        ),
-                      );
+                  UserAvatar(
+                    onTap: () {
+                      Scaffold.of(context).openDrawer();
                     },
                   ),
                   const SizedBox(width: 12),
@@ -633,14 +610,10 @@ class HomeScreenState extends State<HomeScreen> {
                 await PodcastService().recordListen(podcast.id);
                 widget.controller.selectSong(podcast, queue: widget.podcasts);
                 if (context.mounted) {
-                  Navigator.push(
+                  await pushFullPlayer(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => FullPlayerScreen(
-                        controller: widget.controller,
-                        allSongs: widget.songs,
-                      ),
-                    ),
+                    controller: widget.controller,
+                    allSongs: widget.songs,
                   );
                 }
               },
@@ -781,14 +754,10 @@ class HomeScreenState extends State<HomeScreen> {
           contentPadding: EdgeInsets.zero,
           onTap: () {
             widget.controller.selectSong(song, queue: widget.songs);
-            Navigator.push(
+            pushFullPlayer(
               context,
-              MaterialPageRoute(
-                builder: (_) => FullPlayerScreen(
-                  controller: widget.controller,
-                  allSongs: widget.songs,
-                ),
-              ),
+              controller: widget.controller,
+              allSongs: widget.songs,
             );
           },
           leading: Container(

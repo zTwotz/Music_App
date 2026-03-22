@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app.dart';
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_route_observer.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/create_bottom_sheet.dart';
 import '../../shared/widgets/mini_player.dart';
+import '../../shared/widgets/user_avatar.dart';
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../catalog/podcast_catalog_provider.dart';
@@ -30,10 +33,23 @@ class _RootShellState extends State<RootShell> {
   void initState() {
     super.initState();
     _audioController = AudioPlayerController();
+    // No longer need to manage overlay, MiniPlayer is built directly in the widget tree
+    _audioController.addListener(_rebuild);
+    playerRouteObserver.addListener(_rebuild);
+  }
+
+  void _rebuild() {
+    if (mounted) setState(() {});
+  }
+
+  List<Song> get _currentSongs {
+    return context.read<SongCatalogProvider>().allSongs;
   }
 
   @override
   void dispose() {
+    _audioController.removeListener(_rebuild);
+    playerRouteObserver.removeListener(_rebuild);
     _audioController.dispose();
     super.dispose();
   }
@@ -70,6 +86,9 @@ class _RootShellState extends State<RootShell> {
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(
+          name: PlayerRouteObserver.fullPlayerRouteName,
+        ),
         builder: (_) => FullPlayerScreen(
           controller: _audioController,
           allSongs: songs,
@@ -89,8 +108,6 @@ class _RootShellState extends State<RootShell> {
 
     final displayName = auth.displayName;
     final email = auth.email;
-    final avatarLetter =
-        displayName.isNotEmpty ? displayName.characters.first.toUpperCase() : 'U';
 
     final screens = [
       HomeScreen(
@@ -111,6 +128,10 @@ class _RootShellState extends State<RootShell> {
       ),
     ];
 
+    // Check if mini player should be shown: has song AND not inside full player screen
+    final showMiniPlayer =
+        _audioController.hasSong && !playerRouteObserver.isFullPlayerOpen;
+
     return Scaffold(
       drawer: Drawer(
         backgroundColor: const Color(0xFF121212),
@@ -122,22 +143,9 @@ class _RootShellState extends State<RootShell> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    CircleAvatar(
+                    UserAvatar(
                       radius: 24,
-                      backgroundColor: auth.isLoggedIn
-                          ? const Color(0xFFF3759F)
-                          : Colors.white10,
-                      child: auth.isLoggedIn
-                          ? Text(
-                              avatarLetter,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : const Icon(Icons.person,
-                              size: 24, color: Colors.white70),
+                      onTap: () {}, // Icon only inside drawer
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -272,23 +280,19 @@ class _RootShellState extends State<RootShell> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedBuilder(
-            animation: _audioController,
-            builder: (context, _) {
-              if (_audioController.hasSong) {
-                return MiniPlayer(
-                  song: _audioController.currentSong!,
-                  isPlaying: _audioController.isPlaying,
-                  progress: _audioController.progress,
-                  onTap: () => _openFullPlayer(songs),
-                  onPrevious: _audioController.playPrevious,
-                  onPlayPause: _audioController.togglePlayPause,
-                  onNext: _audioController.playNext,
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          if (showMiniPlayer)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: MiniPlayer(
+                song: _audioController.currentSong!,
+                isPlaying: _audioController.isPlaying,
+                progress: _audioController.progress,
+                onTap: () => _openFullPlayer(_currentSongs),
+                onPrevious: _audioController.playPrevious,
+                onPlayPause: _audioController.togglePlayPause,
+                onNext: _audioController.playNext,
+              ),
+            ),
           NavigationBar(
             selectedIndex: _currentIndex,
             backgroundColor: const Color(0xFF181818),

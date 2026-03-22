@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../core/services/podcast_service.dart';
 import '../../shared/models/song.dart';
 import '../home/home_screen.dart';
-import '../player/full_player_screen.dart';
 
 class ChannelScreen extends StatefulWidget {
   final String channelId;
@@ -192,14 +192,10 @@ class _ChannelScreenState extends State<ChannelScreen> {
         await _podcastService.recordListen(podcast.id);
         widget.controller.selectSong(podcast, queue: _channelPodcasts);
         if (mounted) {
-          Navigator.push(
+          pushFullPlayer(
             context,
-            MaterialPageRoute(
-              builder: (_) => FullPlayerScreen(
-                controller: widget.controller,
-                allSongs: widget.allSongs,
-              ),
-            ),
+            controller: widget.controller,
+            allSongs: widget.allSongs,
           );
         }
       },

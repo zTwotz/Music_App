@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../core/services/artist_service.dart';
 import '../artist/artist_songs_screen.dart';
 import '../auth/auth_provider.dart';
@@ -14,7 +15,6 @@ import '../../shared/widgets/animated_equalizer.dart';
 import '../../shared/widgets/song_options_bottom_sheet.dart';
 import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
-import '../player/full_player_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   final AudioPlayerController controller;
@@ -438,14 +438,10 @@ class _SearchScreenState extends State<SearchScreen> {
                         onTap: () {
                           widget.controller
                               .selectSong(song, queue: _filteredSongs);
-                          Navigator.push(
+                          pushFullPlayer(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => FullPlayerScreen(
-                                controller: widget.controller,
-                                allSongs: widget.songs,
-                              ),
-                            ),
+                            controller: widget.controller,
+                            allSongs: widget.songs,
                           );
                         },
                         leading: ClipRRect(

@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../shared/models/song.dart';
 import '../artist/artist_songs_screen.dart';
 import '../catalog/podcast_catalog_provider.dart';
 import '../catalog/song_catalog_provider.dart';
 import '../playlist/playlist_detail_screen.dart';
-import '../player/full_player_screen.dart';
 import 'favorite_songs_screen.dart';
+import '../../shared/widgets/user_avatar.dart';
 
 class LibraryScreen extends StatefulWidget {
   final AudioPlayerController controller;
@@ -250,19 +251,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
                 child: Row(
                   children: [
-                    GestureDetector(
+                    UserAvatar(
                       onTap: () => Scaffold.of(context).openDrawer(),
-                      child: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFFF3759F),
-                        child: Text(
-                          'T',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -375,14 +365,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                           } else if (item['type'] == 'Podcast') {
                             final podcast = item['podcast'] as Podcast;
                             widget.controller.selectSong(podcast, queue: widget.podcasts);
-                            Navigator.push(
+                            pushFullPlayer(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => FullPlayerScreen(
-                                  controller: widget.controller,
-                                  allSongs: widget.songs,
-                                ),
-                              ),
+                              controller: widget.controller,
+                              allSongs: widget.songs,
                             );
                           } else if (isArtist) {
                             Navigator.push(

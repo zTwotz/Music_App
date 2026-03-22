@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/audio/audio_player_controller.dart';
+import '../../core/navigation/player_navigator.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
-import '../player/full_player_screen.dart';
 
 class FavoriteSongsScreen extends StatelessWidget {
   final AudioPlayerController controller;
@@ -76,14 +76,10 @@ class FavoriteSongsScreen extends StatelessWidget {
                       ),
                       onTap: () {
                         controller.selectSong(song, queue: favoriteSongs);
-                        Navigator.push(
+                        pushFullPlayer(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => FullPlayerScreen(
-                              controller: controller,
-                              allSongs: songs,
-                            ),
-                          ),
+                          controller: controller,
+                          allSongs: songs,
                         );
                       },
                     );
