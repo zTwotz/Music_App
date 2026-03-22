@@ -39,7 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (!ok && auth.errorMessage != null) {
+    if (ok) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } else if (auth.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(auth.errorMessage!)),
       );

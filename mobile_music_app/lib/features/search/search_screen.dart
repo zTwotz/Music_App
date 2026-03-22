@@ -194,15 +194,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
                         return GestureDetector(
                           onTap: () {
-                            if (!isLoggedIn) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const LoginScreen()),
-                              );
-                            } else {
-                              Scaffold.of(context).openDrawer();
-                            }
+                            Scaffold.of(context).openDrawer();
                           },
                           child: CircleAvatar(
                             radius: 18,
