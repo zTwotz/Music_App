@@ -108,6 +108,8 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
       animation: widget.controller,
       builder: (context, _) {
         final isFollowing = widget.controller.isFollowing(widget.artistName);
+        final isArtistPlaying = widget.controller.isPlaying &&
+            artistSongs.any((s) => s.id == widget.controller.currentSong?.id);
 
         return Scaffold(
           backgroundColor: const Color(0xFF121212),
@@ -209,19 +211,18 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                         child: IconButton(
                           onPressed: () {
                             if (artistSongs.isNotEmpty) {
-                              widget.controller.selectSong(
-                                artistSongs.first,
-                                queue: artistSongs,
-                              );
-                              pushFullPlayer(
-                                context,
-                                controller: widget.controller,
-                                allSongs: widget.songs,
-                              );
+                              if (isArtistPlaying) {
+                                widget.controller.togglePlayPause();
+                              } else {
+                                widget.controller.selectSong(
+                                  artistSongs.first,
+                                  queue: artistSongs,
+                                );
+                              }
                             }
                           },
-                          icon: const Icon(
-                            Icons.play_arrow,
+                          icon: Icon(
+                            isArtistPlaying ? Icons.pause : Icons.play_arrow,
                             color: Colors.black,
                             size: 32,
                           ),
@@ -235,11 +236,6 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                             widget.controller.selectSong(
                               shuffled.first,
                               queue: shuffled,
-                            );
-                            pushFullPlayer(
-                              context,
-                              controller: widget.controller,
-                              allSongs: widget.songs,
                             );
                           }
                         },
@@ -362,6 +358,15 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                                                 : Colors.white,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 16,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          song.artist,
+                                          style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 13,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,

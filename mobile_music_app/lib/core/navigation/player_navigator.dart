@@ -12,8 +12,7 @@ Future<void> pushFullPlayer(
   required AudioPlayerController controller,
   required List<Song> allSongs,
 }) {
-  return Navigator.push(
-    context,
+  return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute(
       settings: const RouteSettings(
         name: PlayerRouteObserver.fullPlayerRouteName,

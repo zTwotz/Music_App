@@ -28,18 +28,50 @@ class _RootShellState extends State<RootShell> {
   int _currentIndex = 0;
   late final AudioPlayerController _audioController;
   final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+  
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+    GlobalKey<NavigatorState>(),
+  ];
 
   @override
   void initState() {
     super.initState();
     _audioController = AudioPlayerController();
-    // No longer need to manage overlay, MiniPlayer is built directly in the widget tree
     _audioController.addListener(_rebuild);
     playerRouteObserver.addListener(_rebuild);
   }
 
   void _rebuild() {
     if (mounted) setState(() {});
+  }
+
+  Future<bool> _onWillPop() async {
+    final isFirstRouteInCurrentTab =
+        !await _navigatorKeys[_currentIndex].currentState!.maybePop();
+    if (isFirstRouteInCurrentTab) {
+      if (_currentIndex != 0) {
+        _onTapNav(0);
+        return false;
+      }
+    }
+    return isFirstRouteInCurrentTab;
+  }
+
+  Widget _buildOffstageNavigator(int index) {
+    return Navigator(
+      key: _navigatorKeys[index],
+      onGenerateRoute: (routeSettings) {
+        return MaterialPageRoute(
+          builder: (context) => _TabScreenBuilder(
+            index: index,
+            audioController: _audioController,
+            homeKey: index == 0 ? _homeKey : null,
+          ),
+        );
+      },
+    );
   }
 
   List<Song> get _currentSongs {
@@ -83,8 +115,7 @@ class _RootShellState extends State<RootShell> {
   void _openFullPlayer(List<Song> songs) {
     if (!_audioController.hasSong) return;
 
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         settings: const RouteSettings(
           name: PlayerRouteObserver.fullPlayerRouteName,
@@ -100,33 +131,8 @@ class _RootShellState extends State<RootShell> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final catalog = context.watch<SongCatalogProvider>();
-    final podcastCatalog = context.watch<PodcastCatalogProvider>();
-
-    final songs = catalog.allSongs;
-    final podcasts = podcastCatalog.allPodcasts;
-
     final displayName = auth.displayName;
     final email = auth.email;
-
-    final screens = [
-      HomeScreen(
-        key: _homeKey,
-        songs: songs,
-        podcasts: podcasts,
-        controller: _audioController,
-      ),
-      SearchScreen(
-        controller: _audioController,
-        songs: songs,
-        podcasts: podcasts,
-      ),
-      LibraryScreen(
-        controller: _audioController,
-        songs: songs,
-        podcasts: podcasts,
-      ),
-    ];
 
     // Check if mini player should be shown: has song AND not inside full player screen
     final showMiniPlayer =
@@ -211,7 +217,7 @@ class _RootShellState extends State<RootShell> {
                 ),
                 onTap: () {},
               ),
-              if (catalog.isLoading)
+              if (context.watch<SongCatalogProvider>().isLoading)
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
@@ -231,7 +237,7 @@ class _RootShellState extends State<RootShell> {
                     ],
                   ),
                 ),
-              if ((catalog.error ?? '').isNotEmpty)
+              if ((context.watch<SongCatalogProvider>().error ?? '').isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
@@ -276,7 +282,17 @@ class _RootShellState extends State<RootShell> {
           ),
         ),
       ),
-      body: screens[_currentIndex],
+      body: WillPopScope(
+        onWillPop: _onWillPop,
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            _buildOffstageNavigator(0),
+            _buildOffstageNavigator(1),
+            _buildOffstageNavigator(2),
+          ],
+        ),
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -324,5 +340,47 @@ class _RootShellState extends State<RootShell> {
         ],
       ),
     );
+  }
+}
+
+class _TabScreenBuilder extends StatelessWidget {
+  final int index;
+  final AudioPlayerController audioController;
+  final GlobalKey<HomeScreenState>? homeKey;
+
+  const _TabScreenBuilder({
+    required this.index,
+    required this.audioController,
+    this.homeKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final catalog = context.watch<SongCatalogProvider>();
+    final podcastCatalog = context.watch<PodcastCatalogProvider>();
+    
+    final songs = catalog.allSongs;
+    final podcasts = podcastCatalog.allPodcasts;
+
+    if (index == 0) {
+      return HomeScreen(
+        key: homeKey,
+        songs: songs,
+        podcasts: podcasts,
+        controller: audioController,
+      );
+    } else if (index == 1) {
+      return SearchScreen(
+        controller: audioController,
+        songs: songs,
+        podcasts: podcasts,
+      );
+    } else {
+      return LibraryScreen(
+        controller: audioController,
+        songs: songs,
+        podcasts: podcasts,
+      );
+    }
   }
 }
