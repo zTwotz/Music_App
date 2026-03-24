@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/audio/audio_player_controller.dart';
 import '../../core/navigation/player_navigator.dart';
 import '../../core/services/artist_service.dart';
+import '../../shared/models/artist.dart';
 import '../../shared/data/demo_songs.dart';
 import '../../shared/models/song.dart';
 import '../../shared/widgets/animated_equalizer.dart';
@@ -31,6 +32,7 @@ class ArtistSongsScreen extends StatefulWidget {
 class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
   late List<Song> artistSongs;
   String? _fetchedAvatarUrl;
+  Artist? _currentArtist;
   final ScrollController _scrollController = ScrollController();
   double _opacity = 0;
 
@@ -49,8 +51,6 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
   }
 
   Future<void> _fetchArtistAvatar() async {
-    if (widget.avatarUrl != null) return;
-
     final artists = await ArtistService().searchArtists(widget.artistName);
     if (artists.isNotEmpty && mounted) {
       final match = artists.firstWhere(
@@ -58,7 +58,10 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
         orElse: () => artists.first,
       );
       setState(() {
-        _fetchedAvatarUrl = match.avatarUrl;
+        _currentArtist = match;
+        if (widget.avatarUrl == null) {
+          _fetchedAvatarUrl = match.avatarUrl;
+        }
       });
     }
   }
@@ -110,6 +113,15 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
         final isFollowing = widget.controller.isFollowing(widget.artistName);
         final isArtistPlaying = widget.controller.isPlaying &&
             artistSongs.any((s) => s.id == widget.controller.currentSong?.id);
+
+        String formatListeners(int count) {
+          return count.toString().replaceAllMapped(
+              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+        }
+
+        final listenersText = _currentArtist != null && _currentArtist!.monthlyListeners > 0
+            ? '${formatListeners(_currentArtist!.monthlyListeners)} người nghe hằng tháng'
+            : '0 người nghe hằng tháng';
 
         return Scaffold(
           backgroundColor: const Color(0xFF121212),
@@ -182,9 +194,9 @@ class _ArtistSongsScreenState extends State<ArtistSongsScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                            const Text(
-                              '231.698 người nghe hằng tháng',
-                              style: TextStyle(
+                            Text(
+                              listenersText,
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                               ),

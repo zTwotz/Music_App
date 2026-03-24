@@ -9,7 +9,7 @@ class ArtistService {
 
     try {
       final response = await _supabase
-          .from('artists')
+          .from('v_artists_for_app')
           .select()
           .ilike('name', '%$query%')
           .order('name');
@@ -22,7 +22,7 @@ class ArtistService {
 
   Future<List<Artist>> getAllArtists() async {
     try {
-      final response = await _supabase.from('artists').select().order('name');
+      final response = await _supabase.from('v_artists_for_app').select().order('name');
       return (response as List).map((json) => Artist.fromJson(json)).toList();
     } catch (e) {
       return [];

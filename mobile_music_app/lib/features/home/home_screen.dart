@@ -607,7 +607,6 @@ class HomeScreenState extends State<HomeScreen> {
           children: [
             GestureDetector(
               onTap: () async {
-                await PodcastService().recordListen(podcast.id);
                 if (isCurrentItem) {
                   if (context.mounted) {
                     await pushFullPlayer(

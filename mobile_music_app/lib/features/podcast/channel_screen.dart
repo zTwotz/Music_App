@@ -189,7 +189,6 @@ class _ChannelScreenState extends State<ChannelScreen> {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       onTap: () async {
-        await _podcastService.recordListen(podcast.id);
         final isCurrentItem = widget.controller.currentSong?.id == podcast.id;
         
         if (isCurrentItem) {

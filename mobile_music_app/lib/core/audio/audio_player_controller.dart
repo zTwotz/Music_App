@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/services/podcast_service.dart';
 import '../../shared/data/demo_songs.dart';
@@ -100,7 +101,12 @@ class AudioPlayerController extends ChangeNotifier {
 
       if (isNewSong) {
         if (song is Podcast) {
-          PodcastService().recordListen(song.id);
+          // Podcast has its own recordListen in PodcastService
+          // We call it here to keep it centralized
+          await PodcastService().recordListen(song.id);
+        } else {
+          // Regular Song
+          _recordSongListen(song.id);
         }
         _position = Duration.zero;
         _duration = Duration.zero;
@@ -121,6 +127,25 @@ class AudioPlayerController extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _recordSongListen(String id) async {
+    try {
+      final songId = int.tryParse(id);
+      if (songId == null) {
+        debugPrint('Skip recording: Song ID is not numeric: $id');
+        return;
+      }
+
+      debugPrint('Calling RPC record_song_listen for song $songId...');
+      final response = await Supabase.instance.client.rpc('record_song_listen', params: {
+        'p_song_id': songId,
+        'p_source_screen': 'player',
+      });
+      debugPrint('RPC record_song_listen success: $response');
+    } catch (e) {
+      debugPrint('RPC record_song_listen error: $e');
     }
   }
 
