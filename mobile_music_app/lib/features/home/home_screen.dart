@@ -61,6 +61,11 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initializeData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.read<AuthProvider>().isLoggedIn) {
+        context.read<HomeProvider>().fetchRecent();
+      }
+    });
   }
 
   @override
@@ -254,7 +259,7 @@ class HomeScreenState extends State<HomeScreen> {
           await context.read<SongCatalogProvider>().refreshSongs();
           await context.read<PodcastCatalogProvider>().refreshPodcasts();
           if (context.mounted) {
-            await context.read<HomeProvider>().fetchInspiration();
+            await context.read<HomeProvider>().refreshHome();
           }
         },
         child: ListView(
@@ -387,47 +392,125 @@ class HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-            GridView.builder(
-              itemCount: recentItems.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisExtent: 56,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemBuilder: (context, index) {
-                final item = recentItems[index];
+            Consumer<HomeProvider>(
+              builder: (context, home, _) {
+                final rItems = home.recentItems;
+                if (home.isRecentLoading && rItems.isEmpty) {
+                  return const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-                return AnimatedBuilder(
-                  animation: widget.controller,
-                  builder: (context, _) {
-                    String displayImage = item['image'] as String? ?? '';
-                    bool isNetwork = item['isNetwork'] as bool? ?? false;
+                if (rItems.isEmpty) {
+                  // Fallback to demo items if no real history yet
+                  return GridView.builder(
+                    itemCount: recentItems.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 56,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = recentItems[index];
 
-                    if (item['isFavoriteList'] == true) {
-                      if (widget.controller.favoriteSongIds.isNotEmpty &&
-                          widget.songs.isNotEmpty) {
-                        final firstId = widget.controller.favoriteSongIds.first;
-                        final song = widget.songs.firstWhere(
-                          (s) => s.id == firstId,
-                          orElse: () => widget.songs.first,
-                        );
+                      return AnimatedBuilder(
+                        animation: widget.controller,
+                        builder: (context, _) {
+                          String displayImage = item['image'] as String? ?? '';
+                          bool isNetwork = item['isNetwork'] as bool? ?? false;
 
-                        displayImage = song.coverAsset ?? song.coverUrl ?? '';
-                        isNetwork = (song.coverAsset ?? '').isEmpty &&
-                            (song.coverUrl ?? '').isNotEmpty;
-                      } else {
-                        displayImage = '';
-                        isNetwork = false;
-                      }
-                    }
+                          if (item['isFavoriteList'] == true) {
+                            if (widget.controller.favoriteSongIds.isNotEmpty &&
+                                widget.songs.isNotEmpty) {
+                              final firstId = widget.controller.favoriteSongIds.first;
+                              final song = widget.songs.firstWhere(
+                                (s) => s.id == firstId,
+                                orElse: () => widget.songs.first,
+                              );
+
+                              displayImage = song.coverAsset ?? song.coverUrl ?? '';
+                              isNetwork = (song.coverAsset ?? '').isEmpty &&
+                                  (song.coverUrl ?? '').isNotEmpty;
+                            } else {
+                              displayImage = '';
+                              isNetwork = false;
+                            }
+                          }
+
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: item['onTap'] as VoidCallback?,
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF242424),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 56,
+                                      height: 56,
+                                      child: displayImage.isEmpty
+                                          ? Container(
+                                              color: Colors.white10,
+                                              child: const Icon(
+                                                Icons.favorite,
+                                                color: Colors.white70,
+                                              ),
+                                            )
+                                          : _buildImageByPath(
+                                              displayImage,
+                                              isNetwork: isNetwork,
+                                            ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        item['title'] as String? ?? '',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+
+                return GridView.builder(
+                  itemCount: rItems.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisExtent: 56,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = rItems[index];
 
                     return Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: item['onTap'] as VoidCallback?,
+                        onTap: () => _handleRecentItemTap(item),
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
                           decoration: BoxDecoration(
@@ -440,17 +523,21 @@ class HomeScreenState extends State<HomeScreen> {
                               SizedBox(
                                 width: 56,
                                 height: 56,
-                                child: displayImage.isEmpty
+                                child: item['image'] == null || (item['image'] as String).isEmpty
                                     ? Container(
                                         color: Colors.white10,
-                                        child: const Icon(
-                                          Icons.favorite,
+                                        child: Icon(
+                                          item['type'] == 'artist' 
+                                            ? Icons.person 
+                                            : item['type'] == 'liked_songs' 
+                                              ? Icons.favorite 
+                                              : Icons.music_note,
                                           color: Colors.white70,
                                         ),
                                       )
                                     : _buildImageByPath(
-                                        displayImage,
-                                        isNetwork: isNetwork,
+                                        item['image'] as String,
+                                        isNetwork: item['isNetwork'] as bool? ?? true,
                                       ),
                               ),
                               const SizedBox(width: 8),
@@ -582,6 +669,59 @@ class HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _handleRecentItemTap(Map<String, dynamic> item) {
+    final type = item['type'] as String;
+
+    switch (type) {
+      case 'song':
+        final song = item['song_data'] as Song;
+        widget.controller.selectSong(song, queue: [song]);
+        pushFullPlayer(
+          context,
+          controller: widget.controller,
+          allSongs: widget.songs,
+        );
+        break;
+      case 'artist':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArtistSongsScreen(
+              artistName: item['title'] as String,
+              controller: widget.controller,
+              songs: widget.songs,
+            ),
+          ),
+        );
+        break;
+      case 'playlist':
+      case 'album':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlaylistDetailScreen(
+              title: item['title'] as String,
+              songs: (item['songs'] as List<Song>?) ?? [],
+              controller: widget.controller,
+              allSongs: widget.songs,
+            ),
+          ),
+        );
+        break;
+      case 'liked_songs':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FavoriteSongsScreen(
+              controller: widget.controller,
+              songs: widget.songs,
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   Widget _buildPodcastYoutubeItem(Podcast podcast) {
