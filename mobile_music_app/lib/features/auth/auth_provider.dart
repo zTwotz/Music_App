@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/profile_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService authService;
+  final ProfileService profileService;
 
   AuthProvider({
     required this.authService,
+    required this.profileService,
   });
 
   StreamSubscription<AuthState>? _authSubscription;
@@ -18,11 +22,13 @@ class AuthProvider extends ChangeNotifier {
   bool _isInitializing = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _avatarUrl;
 
   User? get user => _user;
   bool get isInitializing => _isInitializing;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get avatarUrl => _avatarUrl;
   bool get isLoggedIn => _user != null;
 
   String get email => _user?.email ?? '';
@@ -46,8 +52,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     _authSubscription = authService.authStateChanges.listen(
-      (data) {
+      (data) async {
         _user = data.session?.user;
+        if (_user != null) {
+          _avatarUrl = await profileService.getAvatarUrl(_user!.id);
+        } else {
+          _avatarUrl = null;
+        }
         notifyListeners();
       },
       onError: (error) {
@@ -55,6 +66,25 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+  }
+
+  Future<void> updateAvatar(File file) async {
+    _setLoading(true);
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final url = await profileService.uploadAvatar(file);
+      if (url != null) {
+        _avatarUrl = url;
+      } else {
+        _errorMessage = 'Không thể tải ảnh lên. Vui lòng thử lại.';
+      }
+    } catch (e) {
+      _errorMessage = 'Đã xảy ra lỗi khi tải ảnh lên.';
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<bool> signIn({

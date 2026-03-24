@@ -10,6 +10,9 @@ import 'features/auth/auth_provider.dart';
 import 'features/catalog/podcast_catalog_provider.dart';
 import 'features/catalog/song_catalog_provider.dart';
 import 'core/services/podcast_service.dart';
+import 'core/services/profile_service.dart';
+import 'core/services/home_service.dart';
+import 'features/home/home_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +31,7 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
             authService: AuthService(),
+            profileService: ProfileService(),
           )..bootstrap(),
         ),
         ChangeNotifierProvider(
@@ -39,6 +43,11 @@ Future<void> main() async {
           create: (_) => PodcastCatalogProvider(
             podcastService: PodcastService(),
           )..loadPodcasts(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => HomeProvider(
+            homeService: HomeService(),
+          )..fetchInspiration(),
         ),
       ],
       child: const MyApp(),

@@ -19,6 +19,7 @@ import '../library/favorite_songs_screen.dart';
 import '../playlist/playlist_detail_screen.dart';
 import '../podcast/channel_screen.dart';
 import '../../shared/widgets/user_avatar.dart';
+import 'home_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
@@ -252,6 +253,9 @@ class HomeScreenState extends State<HomeScreen> {
         onRefresh: () async {
           await context.read<SongCatalogProvider>().refreshSongs();
           await context.read<PodcastCatalogProvider>().refreshPodcasts();
+          if (context.mounted) {
+            await context.read<HomeProvider>().fetchInspiration();
+          }
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -473,80 +477,63 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 28),
           ],
-          const Text(
-            'Khơi nguồn cảm hứng',
+            const Text(
+              'Khơi nguồn cảm hứng',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 190,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: dailyMixes.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final mix = dailyMixes[index];
-                  final image = mix['image'] as String? ?? '';
-                  final isNetwork = mix['isNetwork'] as bool? ?? false;
-                  final songs = mix['songs'] as List<Song>? ?? [];
+            Consumer<HomeProvider>(
+              builder: (context, home, _) {
+                final items = home.inspirationItems;
+                if (home.isLoading) {
+                  return const SizedBox(
+                    height: 190,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PlaylistDetailScreen(
-                            title: mix['title'] as String? ?? '',
-                            songs: songs,
-                            controller: widget.controller,
-                            allSongs: widget.songs,
-                          ),
-                        ),
-                      );
-                    },
-                    child: SizedBox(
-                      width: 140,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 140,
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: image.isEmpty
-                                ? const Center(
-                                    child: Icon(
-                                      Icons.album,
-                                      size: 48,
-                                      color: Colors.white70,
-                                    ),
-                                  )
-                                : _buildImageByPath(
-                                    image,
-                                    isNetwork: isNetwork,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            mix['title'] as String? ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
+                if (items.isEmpty) {
+                  return SizedBox(
+                    height: 190,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: dailyMixes.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final mix = dailyMixes[index];
+                        final image = mix['image'] as String? ?? '';
+                        final isNetwork = mix['isNetwork'] as bool? ?? false;
+                        final songs = mix['songs'] as List<Song>? ?? [];
+
+                        return _buildInspirationCard(
+                          title: mix['title'] as String? ?? '',
+                          image: image,
+                          isNetwork: isNetwork,
+                          songs: songs,
+                        );
+                      },
                     ),
                   );
-                },
-              ),
+                }
+
+                return SizedBox(
+                  height: 190,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      return _buildInspirationCard(
+                        title: item['title'] as String? ?? '',
+                        image: item['image'] as String? ?? '',
+                        isNetwork: item['isNetwork'] as bool? ?? false,
+                        songs: item['songs'] as List<Song>? ?? [],
+                      );
+                    },
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 28),
             const Text(
@@ -967,6 +954,69 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildInspirationCard({
+    required String title,
+    required String image,
+    required bool isNetwork,
+    required List<Song> songs,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlaylistDetailScreen(
+              title: title,
+              songs: songs,
+              controller: widget.controller,
+              allSongs: widget.songs,
+            ),
+          ),
+        );
+      },
+      child: SizedBox(
+        width: 140,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: image.isEmpty
+                  ? const Center(
+                      child: Icon(
+                        Icons.album,
+                        size: 48,
+                        color: Colors.white70,
+                      )
+                    )
+                  : _buildImageByPath(
+                      image,
+                      isNetwork: isNetwork,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
